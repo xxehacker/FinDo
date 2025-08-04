@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="" align="center" width="50%">
+    <img src="https://raw.githubusercontent.com/xxehacker/FinDo/refs/heads/main/logo.svg" align="center" width="50%">
 </p>
 <p align="center"><h1 align="center">FinDo</h1></p>
 <p align="center">
