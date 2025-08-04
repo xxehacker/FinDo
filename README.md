@@ -14,13 +14,8 @@
 <p align="center">
 </p>
 <p align="center">
-	<!-- default option, no dependency badges. -->
 </p>
 <br>
----
-
-##  Features
-
 
 ---
 
