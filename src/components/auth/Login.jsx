@@ -1,40 +1,92 @@
-import React, { useState } from "react";
+import { AuthContext } from "@/contexts/AuthContext";
+import { API_ENDPOINTS } from "@/utils/apiPath";
+import AXIOS_INSTANCE from "@/utils/axiosInstance";
+import React, { useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const navigate = useNavigate();
+  const { user, setUser } = useContext(AuthContext);
+
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log(
-      "handleLogin triggered, form data:",
-      loginForm,
-      "isLoading:",
-      isLoading
-    );
-    if (
-      loginForm.email === "admin@example.com" &&
-      loginForm.password === "password"
-    ) {
-      localStorage.setItem("token", "token");
-      window.location.href = "/dashboard";
-      return;
-    } else {
-      setError("Invalid email or password");
-    }
     setIsLoading(true);
     setError("");
-    try {
-      console.log("loginForm:", loginForm);
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("An error occurred during login");
-    } finally {
+
+    if (!loginForm.email || !loginForm.password) {
+      setError("Please fill in all fields");
       setIsLoading(false);
-      console.log("isLoading reset to:", isLoading);
+      return;
+    }
+
+    if (!validateEmail(loginForm.email)) {
+      setError("Please enter a valid email address");
+      setIsLoading(false);
+      return;
+    }
+
+    if (loginForm.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await AXIOS_INSTANCE.post(
+        API_ENDPOINTS.AUTH.LOGIN,
+        loginForm
+      );
+
+      if (response.status === 200) {
+        if (!response.data.data?.user || !response.data.data?.token) {
+          setError("Invalid response from server");
+          setIsLoading(false);
+          return;
+        }
+        setUser(response.data.data.user);
+        localStorage.setItem("token", response.data?.data?.token);
+        localStorage.setItem("user", JSON.stringify(response.data?.data?.user));
+        setIsLoading(false);
+        setError("");
+      } else {
+        setError(response.data?.message || "Failed to login");
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error(
+        "Login error:",
+        error?.response?.data?.message || error.message
+      );
+      setError(
+        error?.response?.data?.message || "Failed to login. Please try again."
+      );
+      setIsLoading(false);
     }
   };
+
+  // Navigate after user is set
+  useEffect(() => {
+    if (user && user.role) {
+      console.log("Navigating based on role:", user.role);
+      switch (user.role) {
+        case "admin":
+          navigate("/admin/dashboard");
+          break;
+        case "user":
+          navigate("/dashboard");
+          break;
+        default:
+          navigate("/login");
+      }
+    }
+  }, [user, navigate]);
 
   return (
     <>
@@ -72,6 +124,7 @@ const Login = () => {
               setLoginForm({ ...loginForm, email: e.target.value })
             }
             required
+            disabled={isLoading}
           />
         </div>
         <div>
@@ -87,12 +140,12 @@ const Login = () => {
               setLoginForm({ ...loginForm, password: e.target.value })
             }
             required
+            disabled={isLoading}
           />
         </div>
         <button
           type="submit"
           disabled={isLoading}
-          onClick={() => console.log("Sign In button clicked")}
           className="w-full bg-primary text-primary-foreground py-3 px-4 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:cursor-pointer"
         >
           {isLoading ? "Signing in..." : "Sign In"}

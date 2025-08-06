@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Link, useLocation } from "react-router-dom";
+import { AuthContext } from "@/contexts/AuthContext";
 
 const navigation = [
   { id: "dashboard", name: "Dashboard", icon: "📊" },
@@ -13,6 +14,8 @@ const MainLayout = ({ children }) => {
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const currentPath = location.pathname.split("/")[2] || "dashboard";
+
+  const { logout } = useContext(AuthContext);
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,15 +69,12 @@ const MainLayout = ({ children }) => {
                   <div className="text-sm font-medium text-card-foreground">
                     {"Mridu"}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {"Admin"}
-                  </div>
+                  <div className="text-xs text-muted-foreground">{"Admin"}</div>
                 </div>
               </div>
               <button
                 onClick={() => {
-                  console.log("Logout clicked");
-                  // logout();
+                  logout();
                 }}
                 className="px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-destructive/10"
               >

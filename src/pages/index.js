@@ -4,6 +4,7 @@ import DashboardPage from "./dashboard/DashboardPage";
 import TransactionsPage from "./transactions/TransactionsPage";
 import TasksPage from "./tasks/TasksPage";
 import MasterPage from "./masters/MasterPage";
+import NotFoundPage from "./notFound/NotFoundPage";
 
 export {
   LoginPage,
@@ -12,4 +13,5 @@ export {
   TransactionsPage,
   TasksPage,
   MasterPage,
+  NotFoundPage,
 };

@@ -9,36 +9,52 @@ const AuthContextProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) return;
+    if (user) {
+      setLoading(false);
+      return;
+    }
 
-    if (!localStorage.getItem("token")) {
+    const token = localStorage.getItem("token");
+    if (!token) {
       setLoading(false);
       return;
     }
 
     const fetchUser = async () => {
       try {
+        AXIOS_INSTANCE.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         const response = await AXIOS_INSTANCE.get(
           API_ENDPOINTS.AUTH.GET_PROFILE
         );
-        setUser(response.data?.user);
+        if (response.status === 200) {
+          if (!response.data?.data?.user) {
+            throw new Error("User data not found in profile response");
+          }
+          setUser(response.data?.data?.user);
+        }
       } catch (error) {
         const status = error?.response?.status;
         if (status === 401 || status === 403) {
           localStorage.removeItem("token");
           setUser(null);
         }
-        console.log("User not found", error?.response?.data?.message);
+        console.error("User fetch error:", error?.response?.data?.message || error.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUser();  
-  }, []);
+    fetchUser();
+  }, [user]);
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("token");
+    delete AXIOS_INSTANCE.defaults.headers.common["Authorization"];
+  };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, setLoading }}>
+    <AuthContext.Provider value={{ user, setUser, loading, setLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );
