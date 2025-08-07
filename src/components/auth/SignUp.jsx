@@ -1,10 +1,12 @@
+import { API_ENDPOINTS } from "@/utils/apiPath";
+import AXIOS_INSTANCE from "@/utils/axiosInstance";
 import React, { useState } from "react";
 
 const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [signupForm, setSignupForm] = useState({
-    name: "",
+    username: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -12,12 +14,6 @@ const Signup = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    console.log(
-      "handleSignup triggered, form data:",
-      signupForm,
-      "isLoading:",
-      isLoading
-    );
     setIsLoading(true);
     setError("");
     if (signupForm.password !== signupForm.confirmPassword) {
@@ -32,9 +28,22 @@ const Signup = () => {
     }
     try {
       console.log("signupForm:", signupForm);
+      const { username, email, password } = signupForm;
+
+      const response = await AXIOS_INSTANCE.post(API_ENDPOINTS.AUTH.SIGNUP, {
+        username,
+        email,
+        password,
+      });
+
+      if (response.status === 201) {
+        window.location.href = "/login";
+      }
+
+      setIsLoading(false);
     } catch (err) {
       console.error("Signup error:", err);
-      setError("An error occurred during signup");
+      setError(`${err?.response?.data?.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -65,15 +74,15 @@ const Signup = () => {
       <form onSubmit={handleSignup} className="space-y-5">
         <div>
           <label className="block text-sm font-medium text-card-foreground mb-2">
-            Full Name
+            Username
           </label>
           <input
             type="text"
             className="w-full px-4 py-3 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
             placeholder="Enter your full name"
-            value={signupForm.name}
+            value={signupForm.username}
             onChange={(e) =>
-              setSignupForm({ ...signupForm, name: e.target.value })
+              setSignupForm({ ...signupForm, username: e.target.value })
             }
             required
           />

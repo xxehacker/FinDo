@@ -1,16 +1,17 @@
-export const BASE_URL = "http://localhost:9000";
+export const BASE_URL = "http://localhost:7001";
+export const API_VERSION = "/api/v1";
 
 export const API_ENDPOINTS = {
   AUTH: {
-    SIGNUP: "/api/v1/users/signup",
-    LOGIN: "/api/v1/users/login",
-    GET_PROFILE: "/api/v1/users/profile",
+    SIGNUP: `${API_VERSION}/auth/signup`,
+    LOGIN: `${API_VERSION}/auth/login`,
+    GET_PROFILE: `${API_VERSION}/auth/profile`,
   },
-  USERS: {
-    GET_ALL_USERS: "/api/v1/user/",
-    GET_USER_BY_ID: (userId) => `/api/v1/user/${userId}`,
-    CREATE_USER: "/api/v1/user/create",
-    UPDATE_USER_BY_ID: (userId) => `/api/v1/user/${userId}`,
-    DELETE_USER: (userId) => `/api/v1/user/${userId}`,
+  TRANSACTION: {
+    GET_ALL: `${API_VERSION}/transactions/get-all`,
+    // GET_BY_ID: `${API_VERSION}/transactions/:id`,
+    CREATE: `${API_VERSION}/transactions`,
+    UPDATE: `${API_VERSION}/transactions/:id`,
+    DELETE: `${API_VERSION}/transactions/:id`,
   },
 };
