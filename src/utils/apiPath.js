@@ -8,10 +8,10 @@ export const API_ENDPOINTS = {
     GET_PROFILE: `${API_VERSION}/auth/profile`,
   },
   TRANSACTION: {
-    GET_ALL: `${API_VERSION}/transactions/get-all`,
-    // GET_BY_ID: `${API_VERSION}/transactions/:id`,
-    CREATE: `${API_VERSION}/transactions`,
-    UPDATE: `${API_VERSION}/transactions/:id`,
-    DELETE: `${API_VERSION}/transactions/:id`,
+    GET_ALL: `${API_VERSION}/transaction/get-all`,
+    GET_BY_ID: `${API_VERSION}/transaction/:id`,
+    CREATE: `${API_VERSION}/transaction/add`,
+    UPDATE: `${API_VERSION}/transaction/edit/:id`,
+    DELETE: `${API_VERSION}/transaction/delete/:id`,
   },
 };
