@@ -12,6 +12,8 @@ import {
 } from "./pages";
 import PrivateRoute from "./routes/PrivateRoute";
 import AuthContextProvider from "./contexts/AuthContext";
+import CategoryMasterViewPage from "./pages/masters/category/CategoryManagement";
+import CategoryCreatePage from "./pages/masters/category/CategoryCreatePage";
 
 function App() {
   const [isDark, setIsDark] = useState(false);
@@ -47,15 +49,28 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               {/* <Route path="/unauthorized" element={<UnauthorizedPage />} /> */}
-              
+
               {/* User routes */}
               <Route element={<PrivateRoute allowedRoles={["user"]} />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/transactions" element={<TransactionsPage />} />
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/master" element={<MasterPage />} />
+                //! category routes
+                <Route
+                  path="/master/category"
+                  element={<CategoryMasterViewPage />}
+                />
+                <Route
+                  path="/master/category/:id"
+                  element={<CategoryMasterViewPage />}
+                />
+                <Route
+                  path="/master/category/create"
+                  element={<CategoryCreatePage />}
+                />
               </Route>
-              
+
               {/* Admin routes */}
               {/* <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
                 <Route path="/admin/dashboard" element={<AdminDashboardPage />} />

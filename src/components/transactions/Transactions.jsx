@@ -364,20 +364,20 @@ const Transactions = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="w-full mx-auto space-y-8 p-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Transaction Management
           </h1>
-          <p className="text-muted-foreground">
-            Track your income and expenses
+          <p className="text-lg text-muted-foreground mt-2">
+            Track your income and expenses effortlessly
           </p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+          className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:from-primary/90 hover:to-primary transition-all shadow-md disabled:opacity-50"
           disabled={loading}
         >
           ➕ Add Transaction
@@ -387,16 +387,16 @@ const Transactions = () => {
       {/* Modal Form */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-card border border-border rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-card-foreground mb-4">
+          <div className="bg-card border border-border rounded-xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
+            <h3 className="text-2xl font-bold text-card-foreground mb-6">
               {editingTransaction ? "Edit Transaction" : "Add New Transaction"}
             </h3>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Type and Amount */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Type *
                   </label>
                   <select
@@ -408,7 +408,7 @@ const Transactions = () => {
                         category: "",
                       })
                     }
-                    className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring"
+                    className="w-full px-4 py-3 bg-input-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                     required
                   >
                     <option value="income">Income</option>
@@ -416,7 +416,7 @@ const Transactions = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Amount *
                   </label>
                   <input
@@ -426,22 +426,22 @@ const Transactions = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, amount: e.target.value })
                     }
-                    className={`w-full px-3 py-2 bg-input-background border rounded-lg focus:ring-2 focus:ring-ring ${
+                    className={`w-full px-4 py-3 bg-input-background border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
                       errors.amount ? "border-red-500" : "border-border"
                     }`}
                     placeholder="0.00"
                     required
                   />
                   {errors.amount && (
-                    <p className="text-red-500 text-xs mt-1">{errors.amount}</p>
+                    <p className="text-red-500 text-sm mt-1">{errors.amount}</p>
                   )}
                 </div>
               </div>
 
               {/* Category and Bank Account */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Category *
                   </label>
                   <select
@@ -449,7 +449,7 @@ const Transactions = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, category: e.target.value })
                     }
-                    className={`w-full px-3 py-2 bg-input-background border rounded-lg focus:ring-2 focus:ring-ring ${
+                    className={`w-full px-4 py-3 bg-input-background border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
                       errors.category ? "border-red-500" : "border-border"
                     }`}
                     required
@@ -464,13 +464,11 @@ const Transactions = () => {
                       ))}
                   </select>
                   {errors.category && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.category}
-                    </p>
+                    <p className="text-red-500 text-sm mt-1">{errors.category}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Bank Account *
                   </label>
                   <select
@@ -478,7 +476,7 @@ const Transactions = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, bankAccount: e.target.value })
                     }
-                    className={`w-full px-3 py-2 bg-input-background border rounded-lg focus:ring-2 focus:ring-ring ${
+                    className={`w-full px-4 py-3 bg-input-background border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
                       errors.bankAccount ? "border-red-500" : "border-border"
                     }`}
                     required
@@ -491,7 +489,7 @@ const Transactions = () => {
                     ))}
                   </select>
                   {errors.bankAccount && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-sm mt-1">
                       {errors.bankAccount}
                     </p>
                   )}
@@ -500,7 +498,7 @@ const Transactions = () => {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Description *
                 </label>
                 <input
@@ -508,23 +506,23 @@ const Transactions = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  className={`w-full px-3 py-2 bg-input-background border rounded-lg focus:ring-2 focus:ring-ring ${
+                  className={`w-full px-4 py-3 bg-input-background border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
                     errors.description ? "border-red-500" : "border-border"
                   }`}
                   placeholder="Transaction description"
                   required
                 />
                 {errors.description && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p className="text-red-500 text-sm mt-1">
                     {errors.description}
                   </p>
                 )}
               </div>
 
               {/* Date and Time of Day */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Date *
                   </label>
                   <input
@@ -533,17 +531,17 @@ const Transactions = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, date: e.target.value })
                     }
-                    className={`w-full px-3 py-2 bg-input-background border rounded-lg focus:ring-2 focus:ring-ring ${
+                    className={`w-full px-4 py-3 bg-input-background border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
                       errors.date ? "border-red-500" : "border-border"
                     }`}
                     required
                   />
                   {errors.date && (
-                    <p className="text-red-500 text-xs mt-1">{errors.date}</p>
+                    <p className="text-red-500 text-sm mt-1">{errors.date}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Time of Day
                   </label>
                   <select
@@ -551,7 +549,7 @@ const Transactions = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, timeOFDay: e.target.value })
                     }
-                    className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring"
+                    className="w-full px-4 py-3 bg-input-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   >
                     {timeOfDayOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -563,9 +561,9 @@ const Transactions = () => {
               </div>
 
               {/* Transaction Method and Status */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Payment Method *
                   </label>
                   <select
@@ -576,7 +574,7 @@ const Transactions = () => {
                         transactionMethod: e.target.value,
                       })
                     }
-                    className={`w-full px-3 py-2 bg-input-background border rounded-lg focus:ring-2 focus:ring-ring ${
+                    className={`w-full px-4 py-3 bg-input-background border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
                       errors.transactionMethod
                         ? "border-red-500"
                         : "border-border"
@@ -591,13 +589,13 @@ const Transactions = () => {
                     ))}
                   </select>
                   {errors.transactionMethod && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-red-500 text-sm mt-1">
                       {errors.transactionMethod}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-2">
                     Status
                   </label>
                   <select
@@ -608,7 +606,7 @@ const Transactions = () => {
                         transactionStatus: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring"
+                    className="w-full px-4 py-3 bg-input-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   >
                     {transactionStatuses.map((status) => (
                       <option key={status.value} value={status.value}>
@@ -621,20 +619,22 @@ const Transactions = () => {
 
               {/* Notes */}
               <div>
-                <label className="block text-sm font-medium mb-1">Notes</label>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Notes
+                </label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) =>
                     setFormData({ ...formData, notes: e.target.value })
                   }
-                  className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring"
+                  className="w-full px-4 py-3 bg-input-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="Additional notes (optional)"
-                  rows="3"
+                  rows="4"
                 />
               </div>
 
               {/* Form Buttons */}
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex justify-end space-x-4 pt-6">
                 <button
                   type="button"
                   onClick={() => {
@@ -642,14 +642,14 @@ const Transactions = () => {
                     setEditingTransaction(null);
                     resetFormData();
                   }}
-                  className="px-4 py-2 text-muted-foreground hover:text-card-foreground border border-border rounded-lg hover:bg-accent transition-colors"
+                  className="px-6 py-3 text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-accent transition-all disabled:opacity-50"
                   disabled={loading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  className="px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl hover:from-primary/90 hover:to-primary transition-all shadow-md disabled:opacity-50"
                   disabled={loading}
                 >
                   {loading
@@ -666,31 +666,31 @@ const Transactions = () => {
       )}
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center space-x-3">
-            <span className="text-green-500 text-3xl">📈</span>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center space-x-4">
+            <span className="text-3xl text-green-500">📈</span>
             <div>
               <p className="text-sm text-muted-foreground">Total Income</p>
-              <p className="text-2xl font-bold text-green-600">
+              <p className="text-2xl font-semibold text-green-600">
                 ₹{totalIncome.toLocaleString()}
               </p>
             </div>
           </div>
         </div>
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center space-x-3">
-            <span className="text-red-500 text-3xl">📉</span>
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center space-x-4">
+            <span className="text-3xl text-red-500">📉</span>
             <div>
               <p className="text-sm text-muted-foreground">Total Expenses</p>
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-2xl font-semibold text-red-600">
                 ₹{totalExpenses.toLocaleString()}
               </p>
             </div>
           </div>
         </div>
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center space-x-3">
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center space-x-4">
             <span
               className={`text-3xl ${
                 netBalance >= 0 ? "text-green-500" : "text-red-500"
@@ -701,7 +701,7 @@ const Transactions = () => {
             <div>
               <p className="text-sm text-muted-foreground">Net Balance</p>
               <p
-                className={`text-2xl font-bold ${
+                className={`text-2xl font-semibold ${
                   netBalance >= 0 ? "text-green-600" : "text-red-600"
                 }`}
               >
@@ -710,14 +710,12 @@ const Transactions = () => {
             </div>
           </div>
         </div>
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center space-x-3">
-            <span className="text-blue-500 text-3xl">#</span>
+        <div className="bg-card border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center space-x-4">
+            <span className="text-3xl text-blue-500">#</span>
             <div>
-              <p className="text-sm text-muted-foreground">
-                Total Transactions
-              </p>
-              <p className="text-2xl font-bold text-card-foreground">
+              <p className="text-sm text-muted-foreground">Total Transactions</p>
+              <p className="text-2xl font-semibold text-card-foreground">
                 {transactions.length}
               </p>
             </div>
@@ -726,23 +724,23 @@ const Transactions = () => {
       </div>
 
       {/* Search and Filter */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-6">
           <div className="flex-1">
             <input
               type="text"
               placeholder="Search transactions by description, notes, or category..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring"
+              className="w-full px-4 py-3 bg-input-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50"
               disabled={loading}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-4">
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-4 py-2 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring"
+              className="w-full sm:w-40 px-4 py-3 bg-input-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50"
               disabled={loading}
             >
               <option value="all">All Types</option>
@@ -752,11 +750,11 @@ const Transactions = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring"
+              className="w-full sm:w-40 px-4 py-3 bg-input-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50"
               disabled={loading}
             >
               <option value="all">All Status</option>
-              <option value="_completed">Completed</option>
+              <option value="completed">Completed</option>
               <option value="pending">Pending</option>
               <option value="failed">Failed</option>
               <option value="cancelled">Cancelled</option>
@@ -766,39 +764,39 @@ const Transactions = () => {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="mt-2 text-lg text-muted-foreground">Loading...</p>
+            <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-4 border-primary"></div>
+            <p className="mt-4 text-xl text-muted-foreground">Loading...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-muted">
+              <thead className="bg-muted sticky top-0">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground uppercase tracking-wide">
                     Date
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground uppercase tracking-wide">
                     Description
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground uppercase tracking-wide">
                     Category
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground uppercase tracking-wide">
                     Account
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground uppercase tracking-wide">
                     Method
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground uppercase tracking-wide">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground uppercase tracking-wide">
                     Amount
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm font-medium text-muted-foreground uppercase tracking-wide">
                     Actions
                   </th>
                 </tr>
@@ -809,10 +807,12 @@ const Transactions = () => {
                     (a, b) =>
                       new Date(b.date).getTime() - new Date(a.date).getTime()
                   )
-                  .map((transaction) => (
+                  .map((transaction, index) => (
                     <tr
                       key={transaction.id}
-                      className="hover:bg-accent/50 transition-colors"
+                      className={`hover:bg-accent/50 transition-colors ${
+                        index % 2 === 0 ? "bg-muted/50" : ""
+                      }`}
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground">
                         <div>
@@ -827,7 +827,7 @@ const Transactions = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <div
-                            className={`h-3 w-3 rounded-full mr-3 ${
+                            className={`h-3 w-3 rounded-full mr-4 ${
                               transaction.type === "income"
                                 ? "bg-green-500"
                                 : "bg-red-500"
@@ -847,7 +847,7 @@ const Transactions = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                             transaction.type === "income"
                               ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                               : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
@@ -865,7 +865,7 @@ const Transactions = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                             transaction.transactionStatus === "completed"
                               ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                               : transaction.transactionStatus === "pending"
@@ -891,10 +891,10 @@ const Transactions = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-3">
                           <button
                             onClick={() => handleEdit(transaction)}
-                            className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded"
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-2 rounded-full hover:bg-blue-100"
                             disabled={loading}
                             title="Edit transaction"
                           >
@@ -902,7 +902,7 @@ const Transactions = () => {
                           </button>
                           <button
                             onClick={() => handleDelete(transaction.id)}
-                            className="text-red-600 hover:text-red-800 transition-colors p-1 rounded"
+                            className="text-red-600 hover:text-red-800 transition-colors p-2 rounded-full hover:bg-red-100"
                             disabled={loading}
                             title="Delete transaction"
                           >
@@ -915,12 +915,12 @@ const Transactions = () => {
               </tbody>
             </table>
             {filteredTransactions.length === 0 && (
-              <div className="text-center py-12">
-                <span className="text-6xl">📊</span>
-                <h3 className="mt-4 text-lg font-medium text-card-foreground">
+              <div className="text-center py-16">
+                <span className="text-5xl">📊</span>
+                <h3 className="mt-6 text-xl font-semibold text-card-foreground">
                   No transactions found
                 </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
+                <p className="mt-2 text-base text-muted-foreground">
                   {searchTerm || filterType !== "all" || filterStatus !== "all"
                     ? "Try adjusting your search or filters."
                     : "Get started by adding your first transaction."}
@@ -930,7 +930,7 @@ const Transactions = () => {
                   filterStatus === "all" && (
                     <button
                       onClick={() => setShowForm(true)}
-                      className="mt-4 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                      className="mt-6 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:from-primary/90 hover:to-primary transition-all shadow-md disabled:opacity-50"
                       disabled={loading}
                     >
                       Add Transaction
