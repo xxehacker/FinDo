@@ -21,4 +21,11 @@ export const API_ENDPOINTS = {
     UPDATE: `${API_VERSION}/category/edit/:id`,
     DELETE: `${API_VERSION}/category/delete/:id`,
   },
+  BANK: {
+    GET_ALL: `${API_VERSION}/bank/get-all`,
+    GET_BY_ID: `${API_VERSION}/bank/:id`,
+    CREATE: `${API_VERSION}/bank/add`,
+    UPDATE: `${API_VERSION}/bank/edit/:id`,
+    DELETE: `${API_VERSION}/bank/delete/:id`,
+  },
 };

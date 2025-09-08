@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import MainLayout from "../../../components/layouts/MainLayout";
 import { useNavigate } from "react-router-dom";
-import useAxios from "@/hooks/useAxios";
 import { API_ENDPOINTS } from "@/utils/apiPath";
-// Assuming toast is available (e.g., from react-toastify)
 import { toast } from "react-toastify";
+import AXIOS_INSTANCE from "@/utils/axiosInstance";
 
 const CategoryCreatePage = () => {
   const [formData, setFormData] = useState({
@@ -12,14 +11,10 @@ const CategoryCreatePage = () => {
     description: "",
     status: "active",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
-
-  const { execute, loading, error } = useAxios(
-    API_ENDPOINTS.CATEGORY.CREATE,
-    null,
-    { manual: true, method: "POST" }
-  );
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -31,8 +26,7 @@ const CategoryCreatePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting form with data:", formData);
-
+    setLoading(true);
     try {
       const categoryData = {
         name: formData.categoryName.trim(),
@@ -44,15 +38,24 @@ const CategoryCreatePage = () => {
         throw new Error("Category name is required");
       }
 
-      const response = await execute(categoryData);
+      const response = await AXIOS_INSTANCE.post(
+        API_ENDPOINTS.CATEGORY.CREATE,
+        categoryData
+      );
 
-      if (response) {
+      if (response.status === 201) {
         toast.success("Category created successfully");
         navigate("/master/category");
       }
     } catch (err) {
       console.error("API Error:", err.response?.data || err.message || err);
-      // toast.error(`Failed to create category: ${err.response?.data?.message || err.message}`);
+      toast.error(
+        `Failed to create category: ${
+          err.response?.data?.message || err.message
+        }`
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
