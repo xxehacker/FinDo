@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "../../../components/layouts/MainLayout";
-import { useNavigate } from "react-router-dom";
 import { API_ENDPOINTS } from "@/utils/apiPath";
 import { toast } from "react-toastify";
 import AXIOS_INSTANCE from "@/utils/axiosInstance";
 
-const BankCreatePage = () => {
+const BankEditPage = () => {
+  const { id } = useParams();
   const [formData, setFormData] = useState({
     name: "",
     ifsc: "",
@@ -13,16 +14,43 @@ const BankCreatePage = () => {
     accountNumber: "",
     amount: "",
     accountType: "primary",
-    acountUsedAs: "savings",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchBankData = async () => {
+      setLoading(true);
+      try {
+        const response = await AXIOS_INSTANCE.get(
+          API_ENDPOINTS.BANK.GET_BY_ID(id)
+        );
+        const data = response.data?.data;
+
+        if (data) {
+          setFormData({
+            name: data.name || "",
+            ifsc: data.ifsc || "",
+            branch: data.branch || "",
+            accountNumber: data.accountNumber || "",
+            amount: data.amount?.toString() || "",
+            accountType: data.accountType || "primary",
+          });
+        }
+      } catch (err) {
+        console.error("Fetch Error:", err);
+        setError(err);
+        toast.error("Failed to load bank data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBankData();
+  }, [id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    console.log("name: ", name, "value: ", value);
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -46,22 +74,25 @@ const BankCreatePage = () => {
         throw new Error("Bank name and account number are required");
       }
 
-      const response = await AXIOS_INSTANCE.post(
-        API_ENDPOINTS.BANK.CREATE,
+      const response = await AXIOS_INSTANCE.put(
+        API_ENDPOINTS.BANK.UPDATE(id),
         bankData
       );
 
-      if (response.data) {
-        toast.success("Bank account created successfully");
-        navigate("/master/bank");
+      if (response.data && response.status === 200) {
+        toast.success("Bank account updated successfully");
+        setTimeout(() => {
+          navigate("/master/bank");
+        }, [2000]);
       }
     } catch (err) {
       console.error("API Error:", err.response?.data || err.message || err);
       toast.error(
-        `Failed to create bank account: ${
+        `Failed to update bank account: ${
           err.response?.data?.message || err.message
         }`
       );
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -88,15 +119,15 @@ const BankCreatePage = () => {
             <span className="mx-2 text-gray-400">›</span>
             <span className="text-gray-600">Bank Management</span>
             <span className="mx-2 text-gray-400">›</span>
-            <span className="text-gray-800">Create Bank</span>
+            <span className="text-gray-800">Edit Bank</span>
           </nav>
 
           <div className="flex justify-between items-center mb-6 w-full">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">
-                Create Bank
+                Edit Bank
               </h1>
-              <p className="text-gray-600 mt-1">Add a new bank account</p>
+              <p className="text-gray-600 mt-1">Update bank account details</p>
             </div>
             <div className="flex space-x-3">
               <button
@@ -115,7 +146,7 @@ const BankCreatePage = () => {
                 }
                 className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer w-auto"
               >
-                {loading ? "Creating..." : "Create Bank"}
+                {loading ? "Updating..." : "Update Bank"}
               </button>
             </div>
           </div>
@@ -126,9 +157,7 @@ const BankCreatePage = () => {
             <h2 className="text-lg font-semibold text-gray-900 mb-1">
               Basic Information
             </h2>
-            <p className="text-gray-600 text-sm">
-              Bank account registration form
-            </p>
+            <p className="text-gray-600 text-sm">Bank account update form</p>
           </div>
 
           {error && (
@@ -245,4 +274,4 @@ const BankCreatePage = () => {
   );
 };
 
-export default BankCreatePage;
+export default BankEditPage;

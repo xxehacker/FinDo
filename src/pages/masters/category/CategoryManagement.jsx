@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Folder } from "lucide-react";
+import { BiCategory } from "react-icons/bi";
 import MainLayout from "../../../components/layouts/MainLayout";
 import { API_ENDPOINTS } from "@/utils/apiPath";
 import { useNavigate } from "react-router-dom";
 import AXIOS_INSTANCE from "@/utils/axiosInstance";
 import { toast } from "react-toastify";
+import { FaMedkit } from "react-icons/fa";
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState([]);
@@ -152,8 +153,8 @@ const CategoryManagement = () => {
                     </td>
                     <td className="px-6 py-4 align-middle">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
-                          <Folder className="text-yellow-600" size={16} />
+                        <div className="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                          <BiCategory className="text-blue-600" size={18} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-medium text-gray-900 truncate">
@@ -175,19 +176,25 @@ const CategoryManagement = () => {
                     <td className="px-6 py-4 align-middle">
                       <div className="flex items-center space-x-2">
                         <button
-                          className="text-gray-600 hover:text-gray-800 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-gray-50"
+                          className="text-gray-600 hover:text-gray-800 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-gray-50 cursor-pointer"
                           title="View"
+                          onClick={() =>
+                            navigate(`/master/category/view/${category._id}`)
+                          }
                         >
                           View
                         </button>
                         <button
-                          className="text-gray-600 hover:text-gray-800 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-gray-50"
+                          className="text-gray-600 hover:text-gray-800 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-gray-50 cursor-pointer"
                           title="Edit"
+                          onClick={() =>
+                            navigate(`/master/category/edit/${category._id}`)
+                          }
                         >
                           Edit
                         </button>
                         <button
-                          className="text-red-500 hover:text-red-700 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-red-50"
+                          className="text-red-500 hover:text-red-700 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-red-50 cursor-pointer"
                           title="Delete"
                         >
                           Delete

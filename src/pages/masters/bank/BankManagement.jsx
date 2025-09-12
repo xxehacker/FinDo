@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-// import { Bank } from "lucide-react";
 import MainLayout from "../../../components/layouts/MainLayout";
 import { API_ENDPOINTS } from "@/utils/apiPath";
 import { useNavigate } from "react-router-dom";
 import AXIOS_INSTANCE from "@/utils/axiosInstance";
+import { FaPiggyBank } from "react-icons/fa";
 
 const BankManagement = () => {
   const [banks, setBanks] = useState([]);
@@ -134,7 +134,7 @@ const BankManagement = () => {
                   Branch
                 </th>
                 <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                  Account Number
+                  A/C
                 </th>
                 <th className="w-1/12 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
                   Amount
@@ -142,9 +142,7 @@ const BankManagement = () => {
                 <th className="w-1/12 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
                   Type
                 </th>
-                <th className="w-1/12 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                  Used As
-                </th>
+
                 <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
                   Actions
                 </th>
@@ -171,12 +169,12 @@ const BankManagement = () => {
                     </td>
                     <td className="px-6 py-4 align-middle">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                          {/* <Bank className="text-blue-600" size={16} /> */}
+                        <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                          <FaPiggyBank className="text-blue-600" size={20} />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="text-sm font-medium text-gray-900 truncate">
-                            {bank.name}
+                            {bank.name.toUpperCase()}
                           </div>
                           {bank.ifsc && (
                             <div className="text-xs text-gray-500 truncate">
@@ -207,24 +205,21 @@ const BankManagement = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 align-middle">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
-                        {bank.acountUsedAs || "savings"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 align-middle">
                       <div className="flex items-center space-x-2">
                         <button
-                          className="text-gray-600 hover:text-gray-800 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-gray-50"
+                          className="text-gray-600 hover:text-gray-800 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-gray-50 cursor-pointer"
                           title="View"
-                          onClick={() => navigate(`/master/bank/${bank._id}`)}
+                          onClick={() =>
+                            navigate(`/master/bank/view/${bank._id}`)
+                          }
                         >
                           View
                         </button>
                         <button
-                          className="text-gray-600 hover:text-gray-800 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-gray-50"
+                          className="text-gray-600 hover:text-gray-800 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-gray-50 cursor-pointer"
                           title="Edit"
                           onClick={() =>
-                            navigate(`/master/bank/${bank._id}/edit`)
+                            navigate(`/master/bank/edit/${bank._id}`)
                           }
                         >
                           Edit
@@ -238,8 +233,7 @@ const BankManagement = () => {
                                 "Are you sure you want to delete this bank account?"
                               )
                             ) {
-                              // Implement delete API call here
-                              // Example: await execute({ url: `${API_ENDPOINTS.BANK.DELETE}/${bank._id}`, method: "DELETE" });
+                              // deleteBank(bank._id);
                             }
                           }}
                         >

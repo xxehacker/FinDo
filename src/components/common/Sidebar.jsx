@@ -10,6 +10,9 @@ const navigation = [
     label: "Dashboard Management",
     icon: "📊",
     link: "/dashboard",
+    subItems: [
+      { id: "dashboard", label: "Dashboard Analytics", link: "/dashboard" },
+    ],
   },
   {
     id: "transactions",
@@ -17,7 +20,7 @@ const navigation = [
     icon: "💸",
     link: "/transactions",
     subItems: [
-      { id: "pending", label: "Pending", link: "/transactions/pending" },
+      { id: "transactions", label: "Transactions List", link: "/transactions" },
     ],
   },
   {
