@@ -2,18 +2,19 @@ import React from "react";
 
 const transactionMethods = [
   { value: "cash", label: "Cash" },
-  { value: "card", label: "Debit/Credit Card" },
-  { value: "bank_transfer", label: "Bank Transfer" },
-  { value: "upi", label: "UPI" },
-  { value: "wallet", label: "Digital Wallet" },
-  { value: "cheque", label: "Cheque" },
+  { value: "googlepay", label: "Google Pay" },
+  { value: "phonepe", label: "PhonePe" },
+  { value: "paytm", label: "Paytm" },
+  { value: "netbanking", label: "Net Banking" },
+  { value: "debitcard", label: "Debit Card" },
+  { value: "creditcard", label: "Credit Card" },
+  { value: "other", label: "Other" },
 ];
 
 const transactionStatuses = [
-  { value: "completed", label: "Completed" },
   { value: "pending", label: "Pending" },
+  { value: "successful", label: "Successful" },
   { value: "failed", label: "Failed" },
-  { value: "cancelled", label: "Cancelled" },
 ];
 
 const timeOfDayOptions = [
@@ -39,16 +40,48 @@ const TransactionModal = ({
 
   console.log("formData", formData);
   console.log("editingTransaction", editingTransaction);
-  console.log("categories", categories[0].name);
+  console.log("categories", categories);
+  console.log("bankAccounts", bankAccounts);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 h-screen">
+    <div className="fixed inset-0 bg-transparent backdrop-blur bg-opacity-50 flex items-center justify-center p-4 z-50 h-screen">
       <div className="bg-card border border-border rounded-xl p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <h3 className="text-2xl font-bold text-card-foreground mb-6">
-          {editingTransaction ? "Edit Transaction" : "Add New Transaction"}
-        </h3>
+        <div className="flex items-center justify-between space-x-5 mb-5">
+          <div className="bg-purple-500  rounded-lg px-6 py-3">
+            <h3 className="text-xl font-semibold text-white">
+              {editingTransaction ? "Edit Transaction" : "Add New Transaction"}
+            </h3>
+          </div>
 
-        <form onSubmit={onSubmit} className="space-y-6">
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3 text-muted-foreground hover:text-foreground border border-border rounded-lg hover:bg-accent transition-all disabled:opacity-50 text-xl"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg hover:from-primary/90 hover:to-primary transition-all shadow-md disabled:opacity-50 text-xl"
+              disabled={loading}
+              onClick={onSubmit}
+            >
+              {loading
+                ? "Processing..."
+                : editingTransaction
+                ? "Update"
+                : "Add"}{" "}
+            </button>
+          </div>
+        </div>
+
+        {errors.general && (
+          <div className="text-red-600 text-sm mb-4">{errors.general}</div>
+        )}
+
+        <form onSubmit={onSubmit} className="space-y-3">
           {/* Type and Amount */}
           <div className="grid grid-cols-2 gap-6">
             <div>
@@ -111,13 +144,11 @@ const TransactionModal = ({
                 required
               >
                 <option value="">Select category</option>
-                {categories
-                  // .filter((c) => c.type === formData.type)
-                  .map((category) => (
-                    <option key={category._id} value={category?.name}>
-                      {category?.name}
-                    </option>
-                  ))}
+                {categories.map((category) => (
+                  <option key={category._id} value={category._id}>
+                    {category.name}
+                  </option>
+                ))}
               </select>
               {errors.category && (
                 <p className="text-red-500 text-sm mt-1">{errors.category}</p>
@@ -125,7 +156,7 @@ const TransactionModal = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Bank Account *
+                Bank Account
               </label>
               <select
                 value={formData.bankAccount}
@@ -135,12 +166,11 @@ const TransactionModal = ({
                 className={`w-full px-4 py-3 bg-input-background border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
                   errors.bankAccount ? "border-red-500" : "border-border"
                 }`}
-                required
               >
-                <option value="">Select account</option>
+                <option value="">Select account (optional)</option>
                 {bankAccounts.map((account) => (
-                  <option key={account?._id} value={account?.name}>
-                    {account?.name}
+                  <option key={account._id} value={account._id}>
+                    {account.name} ({account.accountNumber})
                   </option>
                 ))}
               </select>
@@ -166,6 +196,7 @@ const TransactionModal = ({
                 errors.description ? "border-red-500" : "border-border"
               }`}
               placeholder="Transaction description"
+              maxLength={200}
               required
             />
             {errors.description && (
@@ -282,31 +313,8 @@ const TransactionModal = ({
               className="w-full px-4 py-3 bg-input-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
               placeholder="Additional notes (optional)"
               rows="4"
+              maxLength={500}
             />
-          </div>
-
-          {/* Form Buttons */}
-          <div className="flex justify-end space-x-4 pt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-3 text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-accent transition-all disabled:opacity-50"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl hover:from-primary/90 hover:to-primary transition-all shadow-md disabled:opacity-50"
-              disabled={loading}
-            >
-              {loading
-                ? "Processing..."
-                : editingTransaction
-                ? "Update"
-                : "Add"}{" "}
-              Transaction
-            </button>
           </div>
         </form>
       </div>

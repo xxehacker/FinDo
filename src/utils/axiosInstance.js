@@ -10,7 +10,7 @@ const AXIOS_INSTANCE = axios.create({
   },
 });
 
-// Add token dynamically using interceptor
+//! Add token dynamically using interceptor
 AXIOS_INSTANCE.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");

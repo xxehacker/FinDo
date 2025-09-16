@@ -56,6 +56,20 @@ const CategoryManagement = () => {
     setFilteredCategories(filtered);
   }, [searchTerm, categories]);
 
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this category?")) {
+      const res = await AXIOS_INSTANCE.delete(
+        API_ENDPOINTS.CATEGORY.DELETE(id)
+      );
+      if (res.status === 200) {
+        toast.success("Category deleted successfully");
+        fetchCategories();
+      }
+    } else {
+      toast.error("Category deletion cancelled");
+    }
+  };
+
   return (
     <MainLayout>
       <div className="min-h-screen">
@@ -196,6 +210,7 @@ const CategoryManagement = () => {
                         <button
                           className="text-red-500 hover:text-red-700 transition duration-150 font-medium bg-white border border-gray-300 rounded-md px-3 py-1.5 text-sm hover:bg-red-50 cursor-pointer"
                           title="Delete"
+                          onClick={() => handleDelete(category._id)}
                         >
                           Delete
                         </button>

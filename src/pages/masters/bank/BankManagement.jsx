@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from "@/utils/apiPath";
 import { useNavigate } from "react-router-dom";
 import AXIOS_INSTANCE from "@/utils/axiosInstance";
 import { FaPiggyBank } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const BankManagement = () => {
   const [banks, setBanks] = useState([]);
@@ -66,6 +67,23 @@ const BankManagement = () => {
       setFilteredBanks([]);
     }
   }, [searchTerm, banks]);
+
+  //! Delete a bank
+  const deleteBank = async (id) => {
+    try {
+      const response = await AXIOS_INSTANCE.delete(
+        API_ENDPOINTS.BANK.DELETE(id)
+      );
+
+      if (response.status === 200) {
+        toast.success("Bank deleted successfully");
+        fetchBanks();
+      }
+    } catch (error) {
+      console.error("Error deleting bank:", error);
+      toast.error("Failed to delete bank");
+    }
+  };
 
   return (
     <MainLayout>
@@ -233,7 +251,7 @@ const BankManagement = () => {
                                 "Are you sure you want to delete this bank account?"
                               )
                             ) {
-                              // deleteBank(bank._id);
+                              deleteBank(bank._id);
                             }
                           }}
                         >
