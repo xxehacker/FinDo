@@ -1,13 +1,21 @@
+// Transactions.jsx
 import { API_ENDPOINTS } from "@/utils/apiPath";
 import AXIOS_INSTANCE from "@/utils/axiosInstance";
 import React, { useEffect, useMemo, useState } from "react";
 import TransactionModal from "./TransactionModa";
 import { toast } from "react-toastify";
+import {
+  ArrowDownCircle,
+  ArrowUpCircle,
+  List,
+  RefreshCw,
+  Wallet,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownCircle, ArrowUpCircle, List, Wallet } from "lucide-react";
 
 const Transactions = () => {
   const [transactions, setTransactions] = useState([]);
+  const [dayWiseSummaries, setDayWiseSummaries] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -18,7 +26,7 @@ const Transactions = () => {
   const [categories, setCategories] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [showDayWiseForm, setShowDayWiseForm] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState(new Set()); // Set to store expanded group IDs new Set();
+  const [expandedDays, setExpandedDays] = useState(new Set());
 
   const [formData, setFormData] = useState({
     type: "expense",
@@ -31,8 +39,6 @@ const Transactions = () => {
     transactionStatus: "pending",
     notes: "",
     timeOFDay: "morning",
-    dailyTransactions: [],
-    dayWiseGroupId: "",
   });
 
   const [dayWiseData, setDayWiseData] = useState({
@@ -43,7 +49,7 @@ const Transactions = () => {
     items: [],
   });
 
-  //! Reset form data
+  // Reset form data
   const resetFormData = () => {
     setFormData({
       type: "expense",
@@ -56,13 +62,11 @@ const Transactions = () => {
       transactionStatus: "pending",
       notes: "",
       timeOFDay: "morning",
-      dailyTransactions: [],
-      dayWiseGroupId: "",
     });
     setErrors({});
   };
 
-  //! Reset day-wise form when hiding
+  // Reset day-wise form
   useEffect(() => {
     if (!showDayWiseForm) {
       setDayWiseData({
@@ -75,10 +79,9 @@ const Transactions = () => {
     }
   }, [showDayWiseForm]);
 
-  //! Validate form data
+  // Validate form data
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       newErrors.amount = "Amount must be greater than 0";
     }
@@ -121,12 +124,11 @@ const Transactions = () => {
     if (formData.notes && formData.notes.length > 500) {
       newErrors.notes = "Notes must be 500 characters or less";
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  //! Fetch all transactions
+  // Fetch all transactions
   const handleGetTransactions = async () => {
     try {
       setLoading(true);
@@ -137,7 +139,6 @@ const Transactions = () => {
         throw new Error("Failed to fetch transactions");
       }
       const data = response.data?.data?.transactions || [];
-      console.log("Transactions:", data);
       setTransactions(data);
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -151,9 +152,37 @@ const Transactions = () => {
     }
   };
 
-  //! Add a new transaction
+  // Fetch day-wise summaries
+  const handleGetDayWiseSummaries = async () => {
+    try {
+      setLoading(true);
+      const response = await AXIOS_INSTANCE.get(
+        API_ENDPOINTS.TRANSACTION.DAY_WISE_SUMMARY
+      );
+      if (response.status !== 200) {
+        throw new Error("Failed to fetch day-wise summaries");
+      }
+      console.log("Full response.data:", response.data); // Debug
+      let data = response.data?.data || [];
+      if (!Array.isArray(data)) {
+        console.warn("dayWiseSummaries data is not an array:", data);
+        data = [];
+      }
+      setDayWiseSummaries(data);
+    } catch (error) {
+      console.error("Error fetching day-wise summaries:", error);
+      setDayWiseSummaries([]);
+      setErrors({
+        general:
+          error.response?.data?.message || "Failed to fetch day-wise summaries",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add a new transaction
   const addTransaction = async (transactionData) => {
-    // console.log("Adding transaction:", transactionData);
     try {
       setLoading(true);
       const response = await AXIOS_INSTANCE.post(
@@ -163,7 +192,8 @@ const Transactions = () => {
       if (response.status !== 201) {
         throw new Error("Failed to add transaction");
       }
-      setTransactions([...transactions, response.data?.data?.transaction]);
+      setTransactions([...transactions, response.data?.data]);
+      await handleGetDayWiseSummaries(); // Refresh summaries
       setErrors({});
       toast.success("Transaction added successfully");
     } catch (error) {
@@ -171,13 +201,13 @@ const Transactions = () => {
       const errorMessage =
         error.response?.data?.message || "Failed to add transaction";
       setErrors({ general: errorMessage });
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  //! Update an existing transaction
+  // Update an existing transaction
   const updateTransaction = async (id, transactionData) => {
     try {
       setLoading(true);
@@ -189,24 +219,23 @@ const Transactions = () => {
         throw new Error("Failed to update transaction");
       }
       setTransactions(
-        transactions.map((t) =>
-          t.id === id ? { ...t, ...response.data.data } : t
-        )
+        transactions.map((t) => (t._id === id ? response.data.data : t))
       );
+      await handleGetDayWiseSummaries(); // Refresh summaries
       setErrors({});
-      alert("Transaction updated successfully");
+      toast.success("Transaction updated successfully");
     } catch (error) {
       console.error("Error updating transaction:", error);
       const errorMessage =
         error.response?.data?.message || "Failed to update transaction";
       setErrors({ general: errorMessage });
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  //! Delete a transaction
+  // Delete a transaction
   const deleteTransaction = async (id) => {
     try {
       setLoading(true);
@@ -216,60 +245,85 @@ const Transactions = () => {
       if (response.status !== 200) {
         throw new Error("Failed to delete transaction");
       }
-      setTransactions(transactions.filter((t) => t.id !== id));
+      setTransactions(transactions.filter((t) => t._id !== id));
+      await handleGetDayWiseSummaries();
       setErrors({});
-      alert("Transaction deleted successfully");
+      toast.success("Transaction deleted successfully");
     } catch (error) {
       console.error("Error deleting transaction:", error);
       const errorMessage =
         error.response?.data?.message || "Failed to delete transaction";
       setErrors({ general: errorMessage });
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  //! Handle day-wise form submission
-  const handleDayWiseSubmit = (e) => {
-    e.preventDefault();
-
-    const totalCalculated = dayWiseData.items.reduce(
-      (sum, item) => sum + item.amount,
-      0
-    );
-    const totalExpected = parseFloat(dayWiseData.totalAmount);
-
-    if (Math.abs(totalCalculated - totalExpected) > 0.01) {
-      alert(
-        `Total of items (${totalCalculated}) doesn't match expected total (${totalExpected})`
-      );
-      return;
-    }
-
-    const groupId = `daywise-${Date.now()}`;
-
-    dayWiseData.items.forEach((item, index) => {
-      const transactionData = {
+  // Add day-wise transaction
+  const addDayWiseTransaction = async (dayWiseData) => {
+    try {
+      setLoading(true);
+      const transactions = dayWiseData.items.map((item) => ({
         type: dayWiseData.type,
-        amount: item.amount,
+        amount: parseFloat(item.amount),
         category: item.category,
-        bankAccount: dayWiseData.bankAccount,
+        bankAccount: dayWiseData.bankAccount || null,
         description: `${item.description} (${item.timeOFDay})`,
         date: dayWiseData.date,
         transactionMethod: formData.transactionMethod,
         transactionStatus: formData.transactionStatus,
         notes: "",
         timeOFDay: item.timeOFDay,
-        dailyTransactions: [],
-        dayWiseGroupId: groupId,
-      };
+      }));
 
-      setTimeout(() => {
-        addTransaction(transactionData);
-      }, index * 10);
-    });
+      const responses = await Promise.all(
+        transactions.map((transaction) =>
+          AXIOS_INSTANCE.post(API_ENDPOINTS.TRANSACTION.CREATE, transaction)
+        )
+      );
 
+      const newTransactions = responses
+        .filter((res) => res.status === 201)
+        .map((res) => res.data?.data);
+
+      if (newTransactions.length !== transactions.length) {
+        throw new Error("Some transactions failed to add");
+      }
+
+      setTransactions([...transactions, ...newTransactions]);
+      await handleGetDayWiseSummaries();
+      setErrors({});
+      toast.success("Day-wise transactions added successfully");
+    } catch (error) {
+      console.error("Error adding day-wise transactions:", error);
+      const errorMessage =
+        error.response?.data?.message || "Failed to add day-wise transactions";
+      setErrors({ general: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle day-wise form submission
+  const handleDayWiseSubmit = (e) => {
+    e.preventDefault();
+
+    const totalCalculated = dayWiseData.items.reduce(
+      (sum, item) => sum + (item.amount || 0),
+      0
+    );
+    const totalExpected = parseFloat(dayWiseData.totalAmount);
+
+    if (Math.abs(totalCalculated - totalExpected) > 0.01) {
+      toast.error(
+        `Total of items (${totalCalculated}) doesn't match expected total (${totalExpected})`
+      );
+      return;
+    }
+
+    addDayWiseTransaction(dayWiseData);
     setShowDayWiseForm(false);
   };
 
@@ -313,48 +367,50 @@ const Transactions = () => {
     );
   };
 
-  const toggleGroupExpansion = (groupId) => {
-    const newExpanded = new Set(expandedGroups);
-    if (expandedGroups.has(groupId)) {
-      newExpanded.delete(groupId);
+  const toggleDayExpansion = (date) => {
+    const newExpanded = new Set(expandedDays);
+    if (expandedDays.has(date)) {
+      newExpanded.delete(date);
     } else {
-      newExpanded.add(groupId);
+      newExpanded.add(date);
     }
-    setExpandedGroups(newExpanded);
+    setExpandedDays(newExpanded);
   };
 
-  const handleDeleteGroup = (groupId) => {
-    const groupTransactions = filteredTransactions.groups.get(groupId);
-    if (!groupTransactions) return;
+  const handleDeleteDay = async (date) => {
+    const daySummary = dayWiseSummaries.find(
+      (summary) => summary.date === date
+    );
+    if (!daySummary) return;
 
     if (
-      confirm(
-        `Are you sure you want to delete all ${groupTransactions.length} transactions in this day-wise group?`
+      window.confirm(
+        `Are you sure you want to delete all ${
+          daySummary.transactions.length
+        } transactions for ${new Date(date).toLocaleDateString()}?`
       )
     ) {
-      groupTransactions.forEach((transaction) => {
-        deleteTransaction(transaction.id);
-      });
+      try {
+        await Promise.all(
+          daySummary.transactions.map((transaction) =>
+            deleteTransaction(transaction._id)
+          )
+        );
+        setExpandedDays((prev) => {
+          const newExpanded = new Set(prev);
+          newExpanded.delete(date);
+          return newExpanded;
+        });
+      } catch (error) {
+        console.error("Error deleting day transactions:", error);
+        toast.error("Failed to delete some transactions");
+      }
     }
   };
 
-  //! Filter and search transactions
+  // Filter and search transactions
   const filteredTransactions = useMemo(() => {
-    const groups = new Map();
-    const standalone = [];
-
-    transactions.forEach((transaction) => {
-      if (transaction.dayWiseGroupId) {
-        if (!groups.has(transaction.dayWiseGroupId)) {
-          groups.set(transaction.dayWiseGroupId, []);
-        }
-        groups.get(transaction.dayWiseGroupId).push(transaction);
-      } else {
-        standalone.push(transaction);
-      }
-    });
-
-    const filteredStandalone = standalone.filter((transaction) => {
+    return transactions.filter((transaction) => {
       const matchesSearch =
         transaction.description
           ?.toLowerCase()
@@ -363,26 +419,19 @@ const Transactions = () => {
         transaction.category?.name
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase());
-
       const matchesType =
         filterType === "all" || transaction.type === filterType;
       const matchesStatus =
         filterStatus === "all" ||
         transaction.transactionStatus === filterStatus;
-
       return matchesSearch && matchesType && matchesStatus;
     });
-
-    return { groups, standalone: filteredStandalone };
   }, [transactions, searchTerm, filterType, filterStatus]);
 
-  //! Handle form submission
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     const transactionData = {
       type: formData.type,
@@ -395,12 +444,10 @@ const Transactions = () => {
       transactionMethod: formData.transactionMethod,
       notes: formData.notes.trim(),
       timeOFDay: formData.timeOFDay,
-      dailyTransactions: formData.dailyTransactions,
-      dayWiseGroupId: formData.dayWiseGroupId,
     };
 
     if (editingTransaction) {
-      updateTransaction(editingTransaction.id, transactionData);
+      updateTransaction(editingTransaction._id, transactionData);
       setEditingTransaction(null);
     } else {
       addTransaction(transactionData);
@@ -410,7 +457,7 @@ const Transactions = () => {
     setShowForm(false);
   };
 
-  //! Handle edit button click
+  // Handle edit button click
   const handleEdit = (transaction) => {
     setEditingTransaction(transaction);
     setFormData({
@@ -424,31 +471,29 @@ const Transactions = () => {
       transactionStatus: transaction.transactionStatus || "pending",
       notes: transaction.notes || "",
       timeOFDay: transaction.timeOFDay || "morning",
-      dailyTransactions: transaction.dailyTransactions || [],
-      dayWiseGroupId: transaction.dayWiseGroupId || "",
     });
     setShowForm(true);
   };
 
-  //! Handle delete button click
+  // Handle delete button click
   const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this transaction?")) {
       deleteTransaction(id);
     }
   };
 
-  // !Calculate statistics
-  const totalIncome = transactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpenses = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-
+  // Calculate statistics with array safeguard
+  const totalIncome = (dayWiseSummaries || []).reduce(
+    (sum, summary) => sum + (summary.totalIncome || 0),
+    0
+  );
+  const totalExpenses = (dayWiseSummaries || []).reduce(
+    (sum, summary) => sum + (summary.totalExpense || 0),
+    0
+  );
   const netBalance = totalIncome - totalExpenses;
 
-  //! Fetch categories
+  // Fetch categories
   const fetchCategories = async () => {
     setLoading(true);
     try {
@@ -458,7 +503,6 @@ const Transactions = () => {
         throw new Error("Failed to fetch categories");
       }
       const categoriesList = response.data?.data || [];
-      console.log("Categories:", categoriesList);
       setCategories(categoriesList);
     } catch (err) {
       console.error("Error fetching categories:", err);
@@ -473,7 +517,7 @@ const Transactions = () => {
     }
   };
 
-  //! Fetch bank accounts
+  // Fetch bank accounts
   const fetchBankAccounts = async () => {
     setLoading(true);
     try {
@@ -482,7 +526,6 @@ const Transactions = () => {
       if (response.status !== 200) {
         throw new Error("Failed to fetch bank accounts");
       }
-      console.log("Bank Accounts:", response.data?.data);
       const bankAccountsList = response.data?.data || [];
       setBankAccounts(bankAccountsList);
     } catch (err) {
@@ -498,9 +541,10 @@ const Transactions = () => {
     }
   };
 
-  //! Fetch transactions on mount
+  // Fetch data on mount
   useEffect(() => {
     handleGetTransactions();
+    handleGetDayWiseSummaries();
     fetchCategories();
     fetchBankAccounts();
   }, []);
@@ -555,23 +599,19 @@ const Transactions = () => {
 
       {/* Day-wise Transaction Form Modal */}
       {showDayWiseForm && (
-        <div className="fixed inset-0 h-full bg-transparent backdrop-blur  bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 h-full bg-transparent backdrop-blur bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-card border border-border rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-card-foreground mb-4">
               Add Day-wise Transactions
             </h3>
             <form onSubmit={handleDayWiseSubmit} className="space-y-6">
-              {/* Header Info */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-accent/30 rounded-lg">
                 <div>
                   <label className="block text-sm font-medium mb-1">Type</label>
                   <select
                     value={dayWiseData.type}
                     onChange={(e) =>
-                      setDayWiseData({
-                        ...dayWiseData,
-                        type: e.target.value,
-                      })
+                      setDayWiseData({ ...dayWiseData, type: e.target.value })
                     }
                     className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring"
                     required
@@ -637,7 +677,6 @@ const Transactions = () => {
                 </select>
               </div>
 
-              {/* Transaction Items */}
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-medium text-card-foreground">
@@ -696,13 +735,11 @@ const Transactions = () => {
                             required
                           >
                             <option value="">Select category</option>
-                            {categories
-                              // .filter((c) => c.type === dayWiseData.type)
-                              .map((category) => (
-                                <option key={category._id} value={category._id}>
-                                  {category.name}
-                                </option>
-                              ))}
+                            {categories.map((category) => (
+                              <option key={category._id} value={category._id}>
+                                {category.name}
+                              </option>
+                            ))}
                           </select>
                         </div>
                         <div>
@@ -768,7 +805,6 @@ const Transactions = () => {
                 )}
               </div>
 
-              {/* Summary */}
               {dayWiseData.items.length > 0 && (
                 <div className="p-4 bg-accent/30 rounded-lg">
                   <div className="flex justify-between items-center">
@@ -827,7 +863,7 @@ const Transactions = () => {
       )}
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 ">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-green-50 to-white border border-green-100 rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all">
           <CardHeader className="flex flex-row items-center space-x-3">
             <span className="p-2 bg-green-100 rounded-full">
@@ -944,6 +980,17 @@ const Transactions = () => {
               <option value="successful">Successful</option>
               <option value="failed">Failed</option>
             </select>
+            <div className="flex items-center">
+              <button className="cursor-pointer font-bold">
+                <RefreshCw
+                  className="w-6 h-6"
+                  onClick={() => {
+                    handleGetTransactions();
+                    handleGetDayWiseSummaries();
+                  }}
+                />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -987,263 +1034,245 @@ const Transactions = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {Array.from(filteredTransactions.groups.entries())
-                  .sort(
-                    ([, a], [, b]) =>
-                      new Date(b[0].date).getTime() -
-                      new Date(a[0].date).getTime()
-                  )
-                  .map(([groupId, groupTransactions]) => {
-                    const totalAmount = groupTransactions.reduce(
-                      (sum, t) => sum + t.amount,
-                      0
-                    );
-                    const representativeTransaction = groupTransactions[0];
-                    const isExpanded = expandedGroups.has(groupId);
+                {(dayWiseSummaries || []).map((summary) => {
+                  const totalAmount =
+                    summary.totalIncome - summary.totalExpense;
+                  const isExpanded = expandedDays.has(summary.date);
 
-                    return (
-                      <React.Fragment key={groupId}>
-                        <tr
-                          className="hover:bg-accent/50 transition-colors cursor-pointer bg-primary/5 dark:bg-primary/10"
-                          onClick={() => toggleGroupExpansion(groupId)}
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground font-medium">
-                            {new Date(
-                              representativeTransaction.date
-                            ).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-primary">
-                                  {isExpanded ? "⬇️" : "➡️"}
-                                </span>
-                                <div
-                                  className={`h-3 w-3 rounded-full ${
-                                    representativeTransaction.type === "income"
-                                      ? "bg-green-500"
-                                      : "bg-red-500"
-                                  }`}
-                                />
-                                <span className="text-sm text-card-foreground font-medium">
-                                  Day Wise Transaction Summary
-                                </span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary">
-                              DayWise ({groupTransactions.length} items)
+                  return (
+                    <React.Fragment key={summary._id}>
+                      <tr
+                        className="hover:bg-accent/50 transition-colors cursor-pointer bg-primary/5 dark:bg-primary/10"
+                        onClick={() => toggleDayExpansion(summary.date)}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-card-foreground font-medium">
+                          {new Date(summary.date).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <span className="text-primary">
+                              {isExpanded ? "⬇️" : "➡️"}
                             </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                            {representativeTransaction.bankAccount?.name ||
-                              "N/A"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground capitalize">
-                            {representativeTransaction.transactionMethod ||
-                              "N/A"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                                representativeTransaction.transactionStatus ===
-                                "successful"
-                                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                  : representativeTransaction.transactionStatus ===
-                                    "pending"
-                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                                  : representativeTransaction.transactionStatus ===
-                                    "failed"
-                                  ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                  : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
-                              }`}
+                            <span className="ml-2 text-sm text-card-foreground font-medium">
+                              Day Wise Summary
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/20 text-primary">
+                            DayWise ({summary.transactions.length} items)
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                          {summary.transactions[0]?.bankAccount?.name || "N/A"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground capitalize">
+                          {summary.transactions[0]?.transactionMethod || "N/A"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                              summary.transactions[0]?.transactionStatus ===
+                              "successful"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                : summary.transactions[0]?.transactionStatus ===
+                                  "pending"
+                                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                                : summary.transactions[0]?.transactionStatus ===
+                                  "failed"
+                                ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+                            }`}
+                          >
+                            {summary.transactions[0]?.transactionStatus ||
+                              "Unknown"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`text-sm font-bold ${
+                              totalAmount >= 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {totalAmount >= 0 ? "+" : "-"}₹
+                            {Math.abs(totalAmount).toLocaleString()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toast.info(
+                                  "Group edit functionality can be implemented here"
+                                );
+                              }}
+                              className="text-primary hover:text-primary/80 transition-colors p-2 rounded-full hover:bg-blue-100"
                             >
-                              {representativeTransaction.transactionStatus ||
-                                "Unknown"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`text-sm font-bold ${
-                                representativeTransaction.type === "income"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
+                              ✏️
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteDay(summary.date);
+                              }}
+                              className="text-red-600 hover:text-red-700 transition-colors p-2 rounded-full hover:bg-red-100"
                             >
-                              {representativeTransaction.type === "income"
-                                ? "+"
-                                : "-"}
-                              ₹{totalAmount.toLocaleString()}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  alert(
-                                    "Group edit functionality can be implemented here"
-                                  );
-                                }}
-                                className="text-primary hover:text-primary/80 transition-colors p-2 rounded-full hover:bg-blue-100"
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteGroup(groupId);
-                                }}
-                                className="text-red-600 hover:text-red-700 transition-colors p-2 rounded-full hover:bg-red-100"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                        {isExpanded &&
-                          groupTransactions
-                            .sort(
-                              (a, b) =>
-                                new Date(a.date).getTime() -
-                                new Date(b.date).getTime()
-                            )
-                            .map((transaction) => (
-                              <tr
-                                key={transaction.id}
-                                className="bg-accent/20 hover:bg-accent/40 transition-colors"
-                              >
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-muted-foreground pl-12">
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {isExpanded &&
+                        summary.transactions
+                          .sort(
+                            (a, b) =>
+                              new Date(a.date).getTime() -
+                              new Date(b.date).getTime()
+                          )
+                          .map((transaction) => (
+                            <tr
+                              key={transaction._id}
+                              className="bg-accent/20 hover:bg-accent/40 transition-colors"
+                            >
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-muted-foreground pl-12">
+                                <div>
+                                  {new Date(
+                                    transaction.date
+                                  ).toLocaleDateString()}
+                                  {transaction.timeOFDay && (
+                                    <div className="text-xs text-muted-foreground capitalize">
+                                      {transaction.timeOFDay}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-3">
+                                <div className="flex items-center pl-8">
+                                  <div
+                                    className={`h-2 w-2 rounded-full mr-3 ${
+                                      transaction.type === "income"
+                                        ? "bg-green-500"
+                                        : "bg-red-500"
+                                    }`}
+                                  />
                                   <div>
-                                    {new Date(
-                                      transaction.date
-                                    ).toLocaleDateString()}
-                                    {transaction.timeOFDay && (
-                                      <div className="text-xs text-muted-foreground capitalize">
-                                        {transaction.timeOFDay}
+                                    <div className="text-sm text-card-foreground">
+                                      {transaction.description}
+                                    </div>
+                                    {transaction.notes && (
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {transaction.notes}
                                       </div>
                                     )}
                                   </div>
-                                </td>
-                                <td className="px-6 py-3">
-                                  <div className="flex items-center pl-8">
-                                    <div
-                                      className={`h-2 w-2 rounded-full mr-3 ${
-                                        transaction.type === "income"
-                                          ? "bg-green-500"
-                                          : "bg-red-500"
-                                      }`}
-                                    />
-                                    <div>
-                                      <div className="text-sm text-card-foreground">
-                                        {transaction.description}
-                                      </div>
-                                      {transaction.notes && (
-                                        <div className="text-xs text-muted-foreground mt-1">
-                                          {transaction.notes}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap">
+                                </div>
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                    transaction.type === "income"
+                                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                      : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                  }`}
+                                >
+                                  {transaction.category?.name || "N/A"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <div className="flex flex-col items-center justify-center">
                                   <span
-                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                                      transaction.type === "income"
-                                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                    className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${
+                                      transaction.bankAccount
+                                        ? "bg-primary text-primary-foreground"
+                                        : "bg-muted text-muted-foreground"
                                     }`}
                                   >
-                                    {transaction.category?.name || "N/A"}
+                                    {transaction.bankAccount?.name?.toUpperCase() ||
+                                      "N/A"}
                                   </span>
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap">
-                                  <div className="flex flex-col items-center justify-center">
-                                    <span
-                                      className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium ${
-                                        transaction.bankAccount
-                                          ? "bg-primary text-primary-foreground"
-                                          : "bg-muted text-muted-foreground"
-                                      }`}
-                                    >
-                                      {transaction.bankAccount?.name?.toUpperCase() ||
-                                        "N/A"}
-                                    </span>
-                                    <span className="text-sm text-muted-foreground">
-                                      {transaction.bankAccount?.accountNumber ||
-                                        "N/A"}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-muted-foreground capitalize">
-                                  {transaction.transactionMethod || "N/A"}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap">
-                                  <span
-                                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                                      transaction.transactionStatus ===
-                                      "successful"
-                                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                        : transaction.transactionStatus ===
-                                          "pending"
-                                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                                        : transaction.transactionStatus ===
-                                          "failed"
-                                        ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                                        : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
-                                    }`}
+                                  <span className="text-sm text-muted-foreground">
+                                    {transaction.bankAccount?.accountNumber ||
+                                      "N/A"}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-muted-foreground capitalize">
+                                {transaction.transactionMethod || "N/A"}
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                                    transaction.transactionStatus ===
+                                    "successful"
+                                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                      : transaction.transactionStatus ===
+                                        "pending"
+                                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                                      : transaction.transactionStatus ===
+                                        "failed"
+                                      ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                      : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+                                  }`}
+                                >
+                                  {transaction.transactionStatus || "Unknown"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap">
+                                <span
+                                  className={`text-sm font-medium ${
+                                    transaction.type === "income"
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {transaction.type === "income" ? "+" : "-"}₹
+                                  {transaction.amount?.toLocaleString()}
+                                </span>
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
+                                <div className="flex items-center space-x-3">
+                                  <button
+                                    onClick={() => handleEdit(transaction)}
+                                    className="text-blue-600 hover:text-blue-800 transition-colors p-2 rounded-full hover:bg-blue-100"
+                                    disabled={loading}
+                                    title="Edit transaction"
                                   >
-                                    {transaction.transactionStatus || "Unknown"}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap">
-                                  <span
-                                    className={`text-sm font-medium ${
-                                      transaction.type === "income"
-                                        ? "text-green-600"
-                                        : "text-red-600"
-                                    }`}
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDelete(transaction._id)
+                                    }
+                                    className="text-red-600 hover:text-red-800 transition-colors p-2 rounded-full hover:bg-red-100"
+                                    disabled={loading}
+                                    title="Delete transaction"
                                   >
-                                    {transaction.type === "income" ? "+" : "-"}₹
-                                    {transaction.amount?.toLocaleString()}
-                                  </span>
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm font-medium">
-                                  <div className="flex items-center space-x-3">
-                                    <button
-                                      onClick={() => handleEdit(transaction)}
-                                      className="text-blue-600 hover:text-blue-800 transition-colors p-2 rounded-full hover:bg-blue-100"
-                                      disabled={loading}
-                                      title="Edit transaction"
-                                    >
-                                      ✏️
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleDelete(transaction.id)
-                                      }
-                                      className="text-red-600 hover:text-red-800 transition-colors p-2 rounded-full hover:bg-red-100"
-                                      disabled={loading}
-                                      title="Delete transaction"
-                                    >
-                                      🗑️
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                      </React.Fragment>
-                    );
-                  })}
-                {filteredTransactions.standalone
+                                    🗑️
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                    </React.Fragment>
+                  );
+                })}
+                {filteredTransactions
+                  .filter(
+                    (t) =>
+                      !dayWiseSummaries.some((s) =>
+                        s.transactions.some((tx) => tx._id === t._id)
+                      )
+                  )
                   .sort(
                     (a, b) =>
                       new Date(b.date).getTime() - new Date(a.date).getTime()
                   )
                   .map((transaction, index) => (
                     <tr
-                      key={transaction.id}
+                      key={transaction._id}
                       className={`hover:bg-accent/50 transition-colors ${
                         index % 2 === 0 ? "bg-muted/50" : ""
                       }`}
@@ -1348,7 +1377,7 @@ const Transactions = () => {
                             ✏️
                           </button>
                           <button
-                            onClick={() => handleDelete(transaction.id)}
+                            onClick={() => handleDelete(transaction._id)}
                             className="text-red-600 hover:text-red-800 transition-colors p-2 rounded-full hover:bg-red-100"
                             disabled={loading}
                             title="Delete transaction"
@@ -1361,8 +1390,8 @@ const Transactions = () => {
                   ))}
               </tbody>
             </table>
-            {filteredTransactions.standalone.length === 0 &&
-              filteredTransactions.groups.size === 0 && (
+            {filteredTransactions.length === 0 &&
+              dayWiseSummaries.length === 0 && (
                 <div className="text-center py-16">
                   <span className="text-5xl">📊</span>
                   <h3 className="mt-6 text-xl font-semibold text-card-foreground">

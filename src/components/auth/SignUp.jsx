@@ -10,6 +10,7 @@ const Signup = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    phone: "",
   });
 
   const handleSignup = async (e) => {
@@ -27,13 +28,14 @@ const Signup = () => {
       return;
     }
     try {
-      console.log("signupForm:", signupForm);
-      const { username, email, password } = signupForm;
+      // console.log("signupForm:", signupForm);
+      const { username, email, password,phone } = signupForm;
 
       const response = await AXIOS_INSTANCE.post(API_ENDPOINTS.AUTH.SIGNUP, {
         username,
         email,
         password,
+        phone
       });
 
       if (response.status === 201) {
@@ -98,6 +100,21 @@ const Signup = () => {
             value={signupForm.email}
             onChange={(e) =>
               setSignupForm({ ...signupForm, email: e.target.value })
+            }
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-card-foreground mb-2">
+            Phone
+          </label>
+          <input
+            type="phone"
+            className="w-full px-4 py-3 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+            placeholder="Enter your phone"
+            value={signupForm.phone}
+            onChange={(e) =>
+              setSignupForm({ ...signupForm, phone: e.target.value })
             }
             required
           />

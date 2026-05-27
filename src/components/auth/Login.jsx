@@ -151,17 +151,6 @@ const Login = () => {
           {isLoading ? "Signing in..." : "Sign In"}
         </button>
       </form>
-      <div className="mt-6 p-4 bg-muted rounded-lg">
-        <h4 className="text-sm font-medium text-card-foreground mb-3">
-          Demo Credentials:
-        </h4>
-        <div className="text-sm text-muted-foreground space-y-2">
-          <div className="flex justify-between">
-            <span className="font-medium">Admin:</span>
-            <span>admin@example.com / password</span>
-          </div>
-        </div>
-      </div>
     </>
   );
 };

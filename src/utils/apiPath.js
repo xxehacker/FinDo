@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
     CREATE: `${API_VERSION}/transaction/add`,
     UPDATE: (id) => `${API_VERSION}/transaction/edit/${id}`,
     DELETE: (id) => `${API_VERSION}/transaction/delete/${id}`,
+    DAY_WISE_SUMMARY: `${API_VERSION}/transaction/day-wise-summary`,
   },
   CATEGORY: {
     GET_ALL: `${API_VERSION}/category/get-all`,
