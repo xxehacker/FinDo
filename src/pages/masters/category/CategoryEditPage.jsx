@@ -4,12 +4,14 @@ import MainLayout from "../../../components/layouts/MainLayout";
 import { API_ENDPOINTS } from "@/utils/apiPath";
 import { toast } from "react-toastify";
 import AXIOS_INSTANCE from "@/utils/axiosInstance";
+import FormCaptureToolbar from "@/components/capture/FormCaptureToolbar";
 
 const CategoryEditPage = () => {
   const { id } = useParams();
   const [formData, setFormData] = useState({
     categoryName: "",
     description: "",
+    type: "expense",
     status: "active",
   });
   const [loading, setLoading] = useState(false);
@@ -27,6 +29,7 @@ const CategoryEditPage = () => {
           setFormData({
             categoryName: response.data?.data?.name || "",
             description: response.data?.data?.description || "",
+            type: response.data?.data?.type || "expense",
             status: response.data?.data?.status || "active",
           });
         }
@@ -56,6 +59,7 @@ const CategoryEditPage = () => {
       const categoryData = {
         name: formData.categoryName.trim(),
         description: formData.description.trim(),
+        type: formData.type,
         status: formData.status,
       };
 
@@ -152,6 +156,12 @@ const CategoryEditPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6 w-full">
+            <FormCaptureToolbar
+              captureType="category"
+              formData={formData}
+              setFormData={setFormData}
+              disabled={loading}
+            />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               <div className="w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -167,6 +177,22 @@ const CategoryEditPage = () => {
                   required
                   disabled={loading}
                 />
+              </div>
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Transaction type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  className="w-full border border-gray-300 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                  required
+                  disabled={loading}
+                >
+                  <option value="expense">Expense</option>
+                  <option value="income">Income</option>
+                </select>
               </div>
               <div className="w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">

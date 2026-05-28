@@ -21,7 +21,12 @@ const chartConfig = {
   },
 };
 
-export function ExpenseChart({ title, data, colorCode }) {
+export function ExpenseChart({ title, data, colorCode, formatCurrency }) {
+  // Default currency formatter if not provided
+  const defaultFormatCurrency = (amount) =>
+    `₹${amount.toLocaleString("en-IN")}`;
+  const currencyFormatter = formatCurrency || defaultFormatCurrency;
+
   const description = "A bar chart for expenses or income";
   return (
     <Card style={{ width: "100%", minHeight: "300px" }}>
@@ -32,7 +37,7 @@ export function ExpenseChart({ title, data, colorCode }) {
       <CardContent>
         <ChartContainer config={chartConfig} style={{ height: "300px" }}>
           <BarChart accessibilityLayer data={data} margin={{ top: 20 }}>
-            <CartesianGrid vertical={false} />
+            <CartesianGrid vertical={false} stroke="var(--neo-black)" strokeOpacity={0.15} strokeDasharray="4 4" />
             <XAxis
               dataKey="month"
               tickLine={false}
@@ -42,7 +47,12 @@ export function ExpenseChart({ title, data, colorCode }) {
             />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={
+                <ChartTooltipContent
+                  hideLabel
+                  formatter={(value) => currencyFormatter(value)}
+                />
+              }
             />
             <Bar dataKey="amount" fill={colorCode} radius={8}>
               <LabelList
@@ -50,6 +60,7 @@ export function ExpenseChart({ title, data, colorCode }) {
                 offset={12}
                 className="fill-foreground"
                 fontSize={12}
+                formatter={(value) => currencyFormatter(value)}
               />
             </Bar>
           </BarChart>

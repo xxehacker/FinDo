@@ -1,16 +1,28 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { motion } from "framer-motion";
 import { ExpenseChart } from "./ExpenseChart";
 import { DailyTransactionChart } from "./DailyTransactionChart";
-import { expenseData, incomeData, demoDailyData } from "@/data/MockData";
+import { StatCard } from "@/components/ui/stat-card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { staggerContainer, fadeInUp } from "@/lib/motion";
 
 const Dashboard = ({
   totalIncome = 0,
   totalExpenses = 0,
   totalBalance = 0,
+  monthIncome = 0,
+  monthExpenses = 0,
+  incomeCount = 0,
   completedTasks = 0,
   totalTasks = 0,
+  incomeChange = 0,
+  expenseChange = 0,
+  monthlyTrend = { incomeData: [], expenseData: [] },
   userTransactions = [],
   userTasks = [],
+  formatCurrency = (amount) => `₹${amount.toLocaleString("en-IN")}`,
   setShowTransactionForm = () => {},
   setShowTaskForm = () => {},
 }) => {
@@ -33,273 +45,295 @@ const Dashboard = ({
     });
   };
 
+  const monthlyChartData = useMemo(() => {
+    const incomeData = monthlyTrend?.incomeData ?? [];
+    const expenseData = monthlyTrend?.expenseData ?? [];
+    if (incomeData.length > 0 || expenseData.length > 0) {
+      return { incomeData, expenseData };
+    }
+
+    const monthlyData = {};
+    const currentDate = new Date();
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - i,
+        1
+      );
+      const monthKey = date.toLocaleString("en-US", { month: "long" });
+      monthlyData[monthKey] = { income: 0, expense: 0 };
+    }
+
+    userTransactions.forEach((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      const monthKey = transactionDate.toLocaleString("en-US", {
+        month: "long",
+      });
+
+      if (monthlyData[monthKey]) {
+        if (transaction.type === "income") {
+          monthlyData[monthKey].income += transaction.amount;
+        } else if (transaction.type === "expense") {
+          monthlyData[monthKey].expense += transaction.amount;
+        }
+      }
+    });
+
+    return {
+      incomeData: Object.keys(monthlyData).map((month) => ({
+        month,
+        amount: monthlyData[month].income,
+      })),
+      expenseData: Object.keys(monthlyData).map((month) => ({
+        month,
+        amount: monthlyData[month].expense,
+      })),
+    };
+  }, [monthlyTrend, userTransactions]);
+
+  const dailyChartData = useMemo(() => {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    const dailyData = {};
+    for (let day = 1; day <= daysInMonth; day++) {
+      dailyData[day] = 0;
+    }
+
+    userTransactions.forEach((transaction) => {
+      const transactionDate = new Date(transaction.date);
+      if (
+        transactionDate.getMonth() === currentMonth &&
+        transactionDate.getFullYear() === currentYear
+      ) {
+        const day = transactionDate.getDate();
+        const signed =
+          transaction.type === "expense"
+            ? -transaction.amount
+            : transaction.amount;
+        dailyData[day] += signed;
+      }
+    });
+
+    return Object.keys(dailyData).map((day) => ({
+      day: day.toString(),
+      amount: dailyData[day],
+    }));
+  }, [userTransactions]);
+
+  const priorityVariant = (priority) => {
+    if (priority === "high") return "destructive";
+    if (priority === "medium") return "secondary";
+    return "accent";
+  };
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-foreground mb-3">
-          Welcome back, Mridupawan!👋
+      <motion.header {...fadeInUp}>
+        <Badge variant="secondary" className="mb-4">
+          Dashboard
+        </Badge>
+        <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
+          Welcome back, Mridupawan! 👋
         </h1>
-        <p className="text-muted-foreground text-lg">
-          Here's what's happening with your finances and tasks today.
+        <p className="text-muted-foreground text-lg font-medium max-w-2xl">
+          Here&apos;s what&apos;s happening with your finances and tasks today.
         </p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground font-medium">
-                Total Balance
-              </p>
-              <p className="text-3xl font-bold text-card-foreground mt-1">
-                ${totalBalance.toLocaleString()}
-              </p>
-              <p className="text-sm text-green-600 mt-1">
-                {totalBalance > 0
-                  ? `+${(
-                      ((totalIncome - totalExpenses) / totalBalance) *
-                      100
-                    ).toFixed(1)}% this month`
-                  : "0% this month"}
-              </p>
-            </div>
-            <div className="h-14 w-14 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
-              <span className="text-green-600 dark:text-green-400 text-2xl">
-                💰
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground font-medium">
-                Total Income
-              </p>
-              <p className="text-3xl font-bold text-green-600 mt-1">
-                ${totalIncome.toLocaleString()}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {recentTransactions.filter((t) => t.type === "income").length}{" "}
-                transactions
-              </p>
-            </div>
-            <div className="h-14 w-14 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 dark:text-blue-400 text-2xl">
-                📈
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground font-medium">
-                Total Expenses
-              </p>
-              <p className="text-3xl font-bold text-red-600 mt-1">
-                ${totalExpenses.toLocaleString()}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {recentTransactions.filter((t) => t.type === "expense").length}{" "}
-                transactions
-              </p>
-            </div>
-            <div className="h-14 w-14 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
-              <span className="text-red-600 dark:text-red-400 text-2xl">
-                📉
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground font-medium">
-                Task Progress
-              </p>
-              <p className="text-3xl font-bold text-card-foreground mt-1">
-                {totalTasks > 0
-                  ? Math.round((completedTasks / totalTasks) * 100)
-                  : 0}
-                %
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {completedTasks} of {totalTasks} completed
-              </p>
-            </div>
-            <div className="h-14 w-14 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-              <span className="text-purple-600 dark:text-purple-400 text-2xl">
-                ✅
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      </motion.header>
+
+      <motion.div
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6"
+      >
+        <StatCard
+          label="Total Balance"
+          value={formatCurrency(totalBalance)}
+          subtext={`This month: ${formatCurrency(monthIncome - monthExpenses)}`}
+          icon="💰"
+          accent="balance"
+        />
+        <StatCard
+          label="Total Income"
+          value={formatCurrency(totalIncome)}
+          subtext={`${incomeCount} income · this month ${formatCurrency(monthIncome)}${incomeChange !== 0 ? ` (${incomeChange > 0 ? "+" : ""}${incomeChange}% vs last month)` : ""}`}
+          icon="📈"
+          accent="income"
+        />
+        <StatCard
+          label="Total Expenses"
+          value={formatCurrency(totalExpenses)}
+          subtext={`This month: ${formatCurrency(monthExpenses)}${expenseChange !== 0 ? ` (${expenseChange > 0 ? "+" : ""}${expenseChange}% vs last month)` : ""}`}
+          icon="📉"
+          accent="expense"
+        />
+        <StatCard
+          label="Task Progress"
+          value={`${totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%`}
+          subtext={`${completedTasks} of ${totalTasks} completed`}
+          icon="✅"
+          accent="tasks"
+        />
+      </motion.div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ExpenseChart
           title="Monthly Income"
-          data={incomeData}
-          colorCode="#4CAF50"
+          data={monthlyChartData.incomeData}
+          colorCode="#7cffcb"
+          formatCurrency={formatCurrency}
         />
         <ExpenseChart
           title="Monthly Expenses"
-          data={expenseData}
-          colorCode="#ef4444"
+          data={monthlyChartData.expenseData}
+          colorCode="#ff6b4a"
+          formatCurrency={formatCurrency}
         />
       </div>
+
       <div className="grid grid-cols-1">
-        <DailyTransactionChart title="Daily Transactions" data={demoDailyData} />
+        <DailyTransactionChart
+          title="Daily Transactions"
+          data={dailyChartData}
+          formatCurrency={formatCurrency}
+        />
       </div>
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h3 className="text-xl font-semibold text-card-foreground mb-4">
-          Quick Actions
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <button
+
+      <div className="neo-card p-6 sm:p-8">
+        <h3 className="text-xl font-bold text-foreground mb-5">Quick Actions</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Button
+            variant="default"
+            className="h-28 flex-col gap-2 text-base"
             onClick={() => setShowTransactionForm(true)}
-            className="h-24 flex flex-col items-center justify-center space-y-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
             <span className="text-2xl">💵</span>
-            <span className="text-sm font-medium">Add Income</span>
-          </button>
-          <button
+            Add Income
+          </Button>
+          <Button
+            variant="secondary"
+            className="h-28 flex-col gap-2 text-base"
             onClick={() => setShowTransactionForm(true)}
-            className="h-24 flex flex-col items-center justify-center space-y-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors"
           >
             <span className="text-2xl">💸</span>
-            <span className="text-sm font-medium">Add Expense</span>
-          </button>
-          <button
+            Add Expense
+          </Button>
+          <Button
+            variant="accent"
+            className="h-28 flex-col gap-2 text-base"
             onClick={() => setShowTaskForm(true)}
-            className="h-24 flex flex-col items-center justify-center space-y-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/80 transition-colors"
           >
             <span className="text-2xl">📝</span>
-            <span className="text-sm font-medium">New Task</span>
-          </button>
+            New Task
+          </Button>
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-card-foreground">
-              Recent Transactions
-            </h3>
-          </div>
-          <div className="space-y-4">
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        <div className="neo-card p-6 sm:p-8">
+          <h3 className="text-xl font-bold text-foreground mb-6">
+            Recent Transactions
+          </h3>
+          <div className="space-y-3">
             {recentTransactions.map((transaction) => (
               <div
                 key={transaction.id}
-                className="flex items-center justify-between p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors"
+                className="flex items-center justify-between p-4 rounded-[14px] border-4 border-[var(--neo-black)] bg-muted/40 hover:bg-muted transition-colors"
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className={`h-3 w-3 rounded-full ${
+                    className={`h-3 w-3 shrink-0 rounded-full border-2 border-[var(--neo-black)] ${
                       transaction.type === "income"
-                        ? "bg-green-500"
-                        : "bg-red-500"
+                        ? "bg-accent"
+                        : "bg-destructive"
                     }`}
                   />
-                  <div>
-                    <p className="font-medium text-card-foreground">
+                  <div className="min-w-0">
+                    <p className="font-bold text-foreground truncate">
                       {transaction.description}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm font-medium text-muted-foreground">
                       {transaction.category}
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0 ml-3">
                   <p
-                    className={`font-semibold ${
+                    className={`font-bold ${
                       transaction.type === "income"
-                        ? "text-green-600"
-                        : "text-red-600"
+                        ? "text-accent-foreground"
+                        : "text-destructive"
                     }`}
                   >
-                    {transaction.type === "income" ? "+" : "-"}$
-                    {transaction.amount.toLocaleString()}
+                    {transaction.type === "income" ? "+" : "-"}
+                    {formatCurrency(transaction.amount)}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm font-medium text-muted-foreground">
                     {formatDate(transaction.date)}
                   </p>
                 </div>
               </div>
             ))}
             {recentTransactions.length === 0 && (
-              <div className="text-center py-12">
-                <span className="text-4xl">📊</span>
-                <p className="text-muted-foreground mt-2">
-                  No transactions yet
-                </p>
-                <button
-                  onClick={() => setShowTransactionForm(true)}
-                  className="mt-3 text-primary hover:underline font-medium"
-                >
-                  Add your first transaction
-                </button>
-              </div>
+              <EmptyState
+                icon="📊"
+                title="No transactions yet"
+                description="Start tracking your money flow."
+                actionLabel="Add transaction"
+                onAction={() => setShowTransactionForm(true)}
+              />
             )}
           </div>
         </div>
-        <div className="bg-card border border-border rounded-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-card-foreground">
-              Upcoming Tasks
-            </h3>
-          </div>
-          <div className="space-y-4">
+
+        <div className="neo-card p-6 sm:p-8">
+          <h3 className="text-xl font-bold text-foreground mb-6">
+            Upcoming Tasks
+          </h3>
+          <div className="space-y-3">
             {upcomingTasks.map((task) => (
               <div
                 key={task.id}
-                className="p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors"
+                className="p-4 rounded-[14px] border-4 border-[var(--neo-black)] bg-card hover:bg-muted/30 transition-colors"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-card-foreground">
-                    {task.title}
-                  </h4>
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      task.priority === "high"
-                        ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                        : task.priority === "medium"
-                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
-                        : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                    }`}
-                  >
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h4 className="font-bold text-foreground">{task.title}</h4>
+                  <Badge variant={priorityVariant(task.priority)}>
                     {task.priority}
-                  </span>
+                  </Badge>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-16 h-2 bg-muted rounded-full">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="flex-1 h-3 rounded-full border-2 border-[var(--neo-black)] bg-muted overflow-hidden">
                       <div
-                        className="h-2 bg-primary rounded-full transition-all"
+                        className="h-full bg-primary transition-all"
                         style={{ width: `${task.progress}%` }}
                       />
                     </div>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm font-bold text-muted-foreground">
                       {task.progress}%
                     </span>
                   </div>
                   {task.dueDate && (
-                    <span className="text-sm text-muted-foreground">
-                      Due: {formatDate(task.dueDate)}
+                    <span className="text-sm font-semibold text-muted-foreground shrink-0">
+                      Due {formatDate(task.dueDate)}
                     </span>
                   )}
                 </div>
               </div>
             ))}
             {upcomingTasks.length === 0 && (
-              <div className="text-center py-12">
-                <span className="text-4xl">✅</span>
-                <p className="text-muted-foreground mt-2">No upcoming tasks</p>
-                <button
-                  onClick={() => setShowTaskForm(true)}
-                  className="mt-3 text-primary hover:underline font-medium"
-                >
-                  Create your first task
-                </button>
-              </div>
+              <EmptyState
+                icon="✅"
+                title="No upcoming tasks"
+                description="You're all caught up for now."
+                actionLabel="Create task"
+                onAction={() => setShowTaskForm(true)}
+              />
             )}
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "../../../components/layouts/MainLayout";
 import { useNavigate } from "react-router-dom";
 import { API_ENDPOINTS } from "@/utils/apiPath";
@@ -8,19 +8,32 @@ import { FormPageLayout } from "@/components/ui/form-page-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CategorySelect } from "@/components/masters/CategorySelect";
 import FormCaptureToolbar from "@/components/capture/FormCaptureToolbar";
 
-const CategoryCreatePage = () => {
+const selectClassName =
+  "flex h-12 w-full rounded-[var(--neo-radius-sm)] border-4 border-[var(--neo-black)] bg-input-background px-4 text-sm font-bold shadow-[4px_4px_0_0_var(--neo-black)]";
+
+const ProductCreatePage = () => {
   const [formData, setFormData] = useState({
-    categoryName: "",
+    name: "",
     description: "",
-    type: "expense",
+    category: "",
+    estimatedPrice: "",
     status: "active",
+    attachment: "",
+    attachmentPreview: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const navigate = useNavigate();
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    AXIOS_INSTANCE.get(API_ENDPOINTS.CATEGORY.GET_ALL).then((res) => {
+      setCategories(res.data?.data || []);
+    });
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -32,102 +45,94 @@ const CategoryCreatePage = () => {
     setLoading(true);
     setError(null);
     try {
-      const categoryData = {
-        name: formData.categoryName.trim(),
-        description: formData.description.trim(),
-        type: formData.type,
-        status: formData.status,
-      };
-      if (!categoryData.name) throw new Error("Category name is required");
+      if (!formData.name.trim()) {
+        throw new Error("Product name is required");
+      }
+      if (!formData.category) {
+        throw new Error("Please select a category");
+      }
 
-      const response = await AXIOS_INSTANCE.post(
-        API_ENDPOINTS.CATEGORY.CREATE,
-        categoryData
-      );
+      const response = await AXIOS_INSTANCE.post(API_ENDPOINTS.PRODUCT.CREATE, {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        estimatedPrice: Number(formData.estimatedPrice) || 0,
+        status: formData.status,
+        attachment: formData.attachment || "",
+      });
 
       if (response.status === 201) {
-        toast.success("Category created successfully");
-        navigate("/master/category");
+        toast.success("Product created successfully");
+        navigate("/master/product");
       }
     } catch (err) {
       setError(err);
       toast.error(
-        `Failed to create category: ${err.response?.data?.message || err.message}`
+        err.response?.data?.message || err.message || "Failed to create product"
       );
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && !formData.categoryName) {
-    return (
-      <MainLayout>
-        <div className="flex justify-center py-24">
-          <div className="h-10 w-10 border-4 border-[var(--neo-black)] border-t-primary rounded-full animate-spin" />
-        </div>
-      </MainLayout>
-    );
-  }
-
   return (
     <MainLayout>
       <FormPageLayout
-        title="Create Category"
-        description="Define name and whether this category is income or expense"
+        title="Create Product"
+        description="Add a product linked to a master category"
         breadcrumbs={
           <>
             <span>Master Data</span>
             <span className="text-foreground">›</span>
-            <span>Categories</span>
+            <span>Products</span>
             <span className="text-foreground">›</span>
             <span className="text-foreground">Create</span>
           </>
         }
-        onBack={() => navigate("/master/category")}
-        error={
-          error
-            ? error.response?.data?.message || error.message
-            : null
-        }
+        onBack={() => navigate("/master/product")}
+        error={error?.response?.data?.message || error?.message}
       >
         <form onSubmit={handleSubmit} className="space-y-6">
           <FormCaptureToolbar
-            captureType="category"
+            captureType="product"
             formData={formData}
             setFormData={setFormData}
+            categories={categories}
             disabled={loading}
           />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="categoryName">
-                Category Name <span className="text-destructive">*</span>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="name">
+                Product Name <span className="text-destructive">*</span>
               </Label>
               <Input
-                id="categoryName"
-                name="categoryName"
-                value={formData.categoryName}
+                id="name"
+                name="name"
+                value={formData.name}
                 onChange={handleInputChange}
-                placeholder="e.g. Groceries"
+                placeholder="e.g. SSD Drive"
                 required
                 disabled={loading}
               />
             </div>
+            <CategorySelect
+              value={formData.category}
+              onChange={handleInputChange}
+              disabled={loading}
+            />
             <div className="space-y-2">
-              <Label htmlFor="type">
-                Transaction type <span className="text-destructive">*</span>
-              </Label>
-              <select
-                id="type"
-                name="type"
-                value={formData.type}
+              <Label htmlFor="estimatedPrice">Estimated Price (₹)</Label>
+              <Input
+                id="estimatedPrice"
+                name="estimatedPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.estimatedPrice}
                 onChange={handleInputChange}
-                className="flex h-12 w-full rounded-[var(--neo-radius-sm)] border-4 border-[var(--neo-black)] bg-input-background px-4 text-sm font-bold shadow-[4px_4px_0_0_var(--neo-black)]"
+                placeholder="0"
                 disabled={loading}
-                required
-              >
-                <option value="expense">Expense (e.g. Food, Rent)</option>
-                <option value="income">Income (e.g. Salary, Freelance)</option>
-              </select>
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
@@ -136,7 +141,7 @@ const CategoryCreatePage = () => {
                 name="status"
                 value={formData.status}
                 onChange={handleInputChange}
-                className="flex h-12 w-full rounded-[var(--neo-radius-sm)] border-4 border-[var(--neo-black)] bg-input-background px-4 text-sm font-bold shadow-[4px_4px_0_0_var(--neo-black)]"
+                className={selectClassName}
                 disabled={loading}
               >
                 <option value="active">Active</option>
@@ -151,7 +156,7 @@ const CategoryCreatePage = () => {
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Optional description"
+              placeholder="Optional details"
               rows={4}
               className="flex w-full rounded-[var(--neo-radius-sm)] border-4 border-[var(--neo-black)] bg-input-background px-4 py-3 text-sm font-medium shadow-[4px_4px_0_0_var(--neo-black)] resize-none focus-visible:outline-none focus-visible:shadow-[6px_6px_0_0_var(--neo-black)]"
               disabled={loading}
@@ -160,14 +165,14 @@ const CategoryCreatePage = () => {
           <div className="flex flex-wrap gap-3 pt-4 border-t-4 border-[var(--neo-black)]">
             <Button
               type="submit"
-              disabled={loading || !formData.categoryName.trim()}
+              disabled={loading || !formData.name.trim() || !formData.category}
             >
-              {loading ? "Creating..." : "Create Category"}
+              {loading ? "Creating..." : "Create Product"}
             </Button>
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/master/category")}
+              onClick={() => navigate("/master/product")}
             >
               Cancel
             </Button>
@@ -178,4 +183,4 @@ const CategoryCreatePage = () => {
   );
 };
 
-export default CategoryCreatePage;
+export default ProductCreatePage;

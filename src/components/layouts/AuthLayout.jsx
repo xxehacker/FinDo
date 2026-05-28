@@ -1,69 +1,64 @@
 import React from "react";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Button } from "@/components/ui/button";
+import { Moon, Sun } from "lucide-react";
+import { fadeInUp } from "@/lib/motion";
 
-const AuthLayout = ({ children }) => {
+const AuthLayout = ({ children, title = "Welcome back", subtitle }) => {
   const { isDark, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-lg">
-        <div className="bg-card border border-border rounded-lg p-8 shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12 relative overflow-hidden">
+      <div
+        className="absolute top-8 right-8 w-24 h-24 rounded-full border-4 border-[var(--neo-black)] bg-secondary neo-shadow-sm pointer-events-none hidden sm:block"
+        aria-hidden
+      />
+      <div
+        className="absolute bottom-12 left-8 w-16 h-16 rotate-12 rounded-[16px] border-4 border-[var(--neo-black)] bg-accent neo-shadow-sm pointer-events-none hidden sm:block"
+        aria-hidden
+      />
+
+      <motion.div
+        {...fadeInUp}
+        className="w-full max-w-md relative z-10"
+      >
+        <div className="neo-card p-8 sm:p-10">
           <div className="text-center mb-8">
-            <div className="h-16 w-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-primary-foreground font-bold text-2xl">
-                F
-              </span>
-            </div>
-            <h1 className="text-3xl font-bold text-card-foreground mb-2">
-              Welcome
-            </h1>
-            <p className="text-muted-foreground">
-              Access your personal finance management
+            <motion.div
+              whileHover={{ rotate: [-2, 2, 0], scale: 1.05 }}
+              className="h-16 w-16 mx-auto mb-5 rounded-[18px] border-4 border-[var(--neo-black)] bg-primary flex items-center justify-center neo-shadow"
+            >
+              <span className="text-2xl font-bold text-primary-foreground">F</span>
+            </motion.div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">{title}</h1>
+            <p className="text-muted-foreground font-medium">
+              {subtitle || "Your bold finance command center"}
             </p>
           </div>
+
           {children}
-          <div className="mt-6 flex justify-center">
-            <button
-              onClick={() => {
-                console.log("Theme toggle clicked");
-                toggleTheme();
-              }}
-              className="p-3 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
-              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+
+          <div className="mt-8 flex items-center justify-between pt-6 border-t-4 border-[var(--neo-black)]">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleTheme}
+              title={isDark ? "Light mode" : "Dark mode"}
+              aria-label="Toggle theme"
             >
-              {isDark ? (
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
-                  />
-                </svg>
-              )}
-            </button>
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            </Button>
+            <p className="text-xs font-semibold text-muted-foreground">
+              <Link to="/login" className="hover:text-primary font-bold">
+                FinDo
+              </Link>{" "}
+              · Neobrutal finance
+            </p>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

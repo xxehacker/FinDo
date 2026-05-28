@@ -4,6 +4,7 @@ import MainLayout from "../../../components/layouts/MainLayout";
 import { API_ENDPOINTS } from "@/utils/apiPath";
 import { toast } from "react-toastify";
 import AXIOS_INSTANCE from "@/utils/axiosInstance";
+import FormCaptureToolbar from "@/components/capture/FormCaptureToolbar";
 
 const BankEditPage = () => {
   const { id } = useParams();
@@ -169,6 +170,12 @@ const BankEditPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6 w-full">
+            <FormCaptureToolbar
+              captureType="bank"
+              formData={formData}
+              setFormData={setFormData}
+              disabled={loading}
+            />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
               <div className="w-full">
                 <label className="block text-sm font-medium text-gray-700 mb-2">

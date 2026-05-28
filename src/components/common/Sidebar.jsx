@@ -1,365 +1,284 @@
 import React, { useState, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTheme } from "@/contexts/ThemeContext";
 import { Link, useLocation } from "react-router-dom";
 import { AuthContext } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import {
+  LayoutDashboard,
+  CreditCard,
+  CheckSquare,
+  Database,
+  FolderOpen,
+  Building2,
+  Package,
+  LogOut,
+  ChevronRight,
+  Menu,
+  X,
+} from "lucide-react";
 
 const navigation = [
   {
     id: "dashboard",
-    label: "Dashboard Management",
-    icon: "📊",
+    label: "Dashboard",
+    icon: LayoutDashboard,
     link: "/dashboard",
     subItems: [
-      { id: "dashboard", label: "Dashboard Analytics", link: "/dashboard" },
+      { id: "overview", label: "Overview", link: "/dashboard" },
+      { id: "analytics", label: "Analytics", link: "/dashboard/analytics" },
     ],
   },
   {
     id: "transactions",
-    label: "Transactions Management",
-    icon: "💸",
+    label: "Transactions",
+    icon: CreditCard,
     link: "/transactions",
     subItems: [
-      { id: "transactions", label: "Transactions List", link: "/transactions" },
+      { id: "all", label: "All Transactions", link: "/transactions" },
+      { id: "income", label: "Income", link: "/transactions/income" },
+      { id: "expenses", label: "Expenses", link: "/transactions/expenses" },
     ],
   },
   {
     id: "tasks",
-    label: "Tasks Management",
-    icon: "📋",
+    label: "Tasks",
+    icon: CheckSquare,
     link: "/tasks",
     subItems: [
-      { id: "tasks", label: "Tasks List", link: "/tasks" },
+      { id: "active", label: "Active Tasks", link: "/tasks" },
       { id: "completed", label: "Completed", link: "/tasks/completed" },
+      { id: "archived", label: "Archived", link: "/tasks/archived" },
     ],
   },
   {
-    id: "Master Management",
+    id: "master",
     label: "Master Data",
-    icon: "📁",
+    icon: Database,
     link: "/master",
     subItems: [
-      { id: "category", label: "Category", link: "/master/category" },
-      { id: "bank", label: "Bank", link: "/master/bank" },
-      { id: "product", label: "Product", link: "/master/product" },
+      {
+        id: "category",
+        label: "Categories",
+        link: "/master/category",
+        icon: FolderOpen,
+      },
+      {
+        id: "bank",
+        label: "Bank Accounts",
+        link: "/master/bank",
+        icon: Building2,
+      },
+      {
+        id: "product",
+        label: "Products",
+        link: "/master/product",
+        icon: Package,
+      },
     ],
   },
 ];
 
 const Sidebar = () => {
-  const { isDark } = useTheme();
   const { logout } = useContext(AuthContext);
   const location = useLocation();
-  const currentPath = location.pathname.split("/")[2] || "dashboard";
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
+  const toggleMobileSidebar = () => setIsMobileOpen(!isMobileOpen);
   const toggleDropdown = (id) => {
     setOpenDropdown(openDropdown === id ? null : id);
   };
 
-  const sidebarVariants = {
-    open: {
-      width: 220,
-      transition: {
-        type: "spring",
-        stiffness: 400,
-        damping: 40,
-        duration: 0.3,
-      },
-    },
-    closed: {
-      width: 56,
-      transition: {
-        type: "spring",
-        stiffness: 400,
-        damping: 40,
-        duration: 0.3,
-      },
-    },
+  const isActiveRoute = (link) => {
+    if (link === "/dashboard") {
+      return location.pathname === "/dashboard";
+    }
+    if (link === "/transactions") {
+      return location.pathname === "/transactions";
+    }
+    if (link === "/tasks") {
+      return location.pathname === "/tasks";
+    }
+    return (
+      location.pathname === link || location.pathname.startsWith(link + "/")
+    );
   };
 
-  const textVariants = {
-    open: {
-      opacity: 1,
-      x: 0,
-      scale: 1,
-      transition: { delay: 0.15, duration: 0.25, ease: "easeOut" },
-    },
-    closed: {
-      opacity: 0,
-      x: -10,
-      scale: 0.8,
-      transition: { duration: 0.15, ease: "easeIn" },
-    },
-  };
-
-  const itemVariants = {
-    rest: { scale: 1 },
-    hover: {
-      scale: 1.02,
-      x: 4,
-      transition: { type: "spring", stiffness: 400, damping: 25 },
-    },
-  };
-
-  const dropdownVariants = {
-    open: {
-      height: "auto",
-      opacity: 1,
-      transition: { duration: 0.3, ease: "easeOut" },
-    },
-    closed: {
-      height: 0,
-      opacity: 0,
-      transition: { duration: 0.2, ease: "easeIn" },
-    },
-  };
+  const isParentActive = (item) =>
+    item.subItems.some((subItem) => isActiveRoute(subItem.link));
 
   return (
-    <motion.div
-      className={`relative min-h-screen w-full flex flex-col overflow-hidden backdrop-blur-xl ${
-        isDark
-          ? "bg-gray-900/95 border-gray-700/50 shadow-2xl shadow-black/20"
-          : "bg-white/95 border-gray-200/50 shadow-2xl shadow-gray-900/10"
-      } border-r`}
-      initial={false}
-      animate={isOpen ? "open" : "closed"}
-      variants={sidebarVariants}
-      onHoverStart={() => setIsOpen(true)}
-      onHoverEnd={() => {}}
-    >
-      {/* Gradient Overlay */}
-      <div
-        className={`absolute inset-0 ${
-          isDark
-            ? "bg-gradient-to-b from-blue-600/5 via-purple-600/5 to-transparent"
-            : "bg-gradient-to-b from-blue-500/3 via-indigo-500/3 to-transparent"
-        }`}
-      />
+    <>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={toggleMobileSidebar}
+        className="fixed top-4 left-4 z-50 lg:hidden"
+        aria-label="Toggle menu"
+        animated={false}
+      >
+        {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
+      </Button>
 
-      {/* Header Section */}
-      <div className="relative z-10 flex items-center justify-between p-4 border-b border-border/60">
-        <div className="flex items-center">
+      <AnimatePresence>
+        {isMobileOpen && (
           <motion.div
-            className={`h-10 w-10 rounded-xl flex items-center justify-center shadow-lg ${
-              isDark
-                ? "bg-gradient-to-br from-blue-600 to-purple-600 shadow-blue-600/25"
-                : "bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/25"
-            }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <span className="text-white font-bold text-lg">F</span>
-          </motion.div>
-          <AnimatePresence>
-            {isOpen && (
-              <motion.div
-                className="ml-3"
-                variants={textVariants}
-                initial="closed"
-                animate="open"
-                exit="closed"
-              >
-                <span className="font-bold text-lg bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  FinDo
-                </span>
-                <div
-                  className={`text-xs ${
-                    isDark ? "text-gray-400" : "text-gray-500"
-                  } mt-0.5`}
-                >
-                  Financial Manager
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={toggleMobileSidebar}
+            className="fixed inset-0 bg-[var(--neo-black)]/50 z-40 lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.aside
+        className={`fixed lg:sticky top-0 left-0 h-screen z-40 flex flex-col bg-sidebar border-r-4 border-[var(--neo-black)] neo-shadow-lg ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        } transition-transform lg:transition-none`}
+        style={{ width: isOpen ? "280px" : "88px" }}
+      >
+        <div
+          className={`flex items-center ${
+            isOpen ? "justify-between" : "justify-center"
+          } px-4 py-5 border-b-4 border-[var(--neo-black)]`}
+        >
+          {isOpen ? (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-[14px] border-4 border-[var(--neo-black)] bg-primary flex items-center justify-center shadow-[3px_3px_0_0_var(--neo-black)]">
+                  <span className="text-primary-foreground font-bold text-lg">
+                    F
+                  </span>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <div className="leading-tight">
+                  <h1 className="font-bold text-lg text-sidebar-foreground">
+                    FinDo
+                  </h1>
+                  <p className="text-xs text-muted-foreground font-semibold">
+                    Finance Manager
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={toggleSidebar}
+                className="p-2 rounded-[10px] border-3 border-[var(--neo-black)] bg-secondary shadow-[2px_2px_0_0_var(--neo-black)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-transform"
+                aria-label="Collapse sidebar"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={toggleSidebar}
+              className="p-2 rounded-[10px] border-3 border-[var(--neo-black)] bg-secondary shadow-[2px_2px_0_0_var(--neo-black)]"
+              aria-label="Expand sidebar"
+            >
+              <ChevronRight size={18} className="rotate-180" />
+            </button>
+          )}
         </div>
 
-        <motion.button
-          onClick={toggleSidebar}
-          className={`p-2 rounded-xl transition-all duration-200 ${
-            isDark
-              ? "hover:bg-gray-800/80 text-gray-300 hover:text-white"
-              : "hover:bg-gray-100/80 text-gray-600 hover:text-gray-900"
-          }`}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
-        >
-          <motion.svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            animate={{ rotate: isOpen ? 0 : 180 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-          >
-            <path d="m15 18-6-6 6-6" />
-          </motion.svg>
-        </motion.button>
-      </div>
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-2">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            const isActive = isParentActive(item);
+            const isDropdownOpen = openDropdown === item.id;
 
-      {/* Navigation Section */}
-      <nav className="flex-1 p-3 space-y-1 relative z-10">
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              className={`text-xs font-semibold uppercase tracking-wider mb-4 ${
-                isDark ? "text-gray-400" : "text-gray-500"
-              }`}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ delay: 0.2 }}
-            >
-              Navigation
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {navigation.map((item) => (
-          <div key={item.id}>
-            <motion.div variants={itemVariants} initial="rest" animate="rest">
-              <div
-                className={`relative flex items-center p-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
-                  currentPath === item.id
-                    ? isDark
-                      ? "bg-gradient-to-r from-blue-600/90 to-purple-600/90 text-white shadow-lg shadow-blue-600/25"
-                      : "bg-gradient-to-r from-blue-500/90 to-indigo-600/90 text-white shadow-lg shadow-blue-500/25"
-                    : isDark
-                    ? "text-gray-300 hover:text-white hover:bg-gray-800/60"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/60"
-                }`}
-                onClick={() => isOpen && toggleDropdown(item.id)} // Toggle dropdown on click
-              >
-                {/* Active indicator */}
-                {currentPath === item.id && (
-                  <motion.div
-                    className={`absolute left-0 top-1/2 w-1 h-8 rounded-r-full ${
-                      isDark ? "bg-white/80" : "bg-white/90"
-                    }`}
-                    layoutId="activeIndicator"
-                    initial={{ x: -4, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  />
-                )}
-
-                <span className="text-lg mr-2 flex-shrink-0">{item.icon}</span>
+            return (
+              <div key={item.id}>
+                <button
+                  onClick={() => {
+                    if (isOpen) {
+                      toggleDropdown(item.id);
+                    } else {
+                      setIsOpen(true);
+                      setTimeout(() => toggleDropdown(item.id), 100);
+                    }
+                  }}
+                  className={`w-full flex items-center ${
+                    isOpen ? "justify-between" : "justify-center"
+                  } px-3 py-3 rounded-[14px] text-sm font-bold border-4 transition-all duration-150 ${
+                    isActive
+                      ? "border-[var(--neo-black)] bg-primary text-primary-foreground shadow-[4px_4px_0_0_var(--neo-black)]"
+                      : "border-transparent hover:border-[var(--neo-black)] hover:bg-muted hover:shadow-[3px_3px_0_0_var(--neo-black)] text-sidebar-foreground"
+                  }`}
+                  title={!isOpen ? item.label : ""}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon size={20} className="shrink-0" />
+                    {isOpen && <span>{item.label}</span>}
+                  </div>
+                  {isOpen && (
+                    <ChevronRight
+                      size={16}
+                      className={`transition-transform ${
+                        isDropdownOpen ? "rotate-90" : ""
+                      }`}
+                    />
+                  )}
+                </button>
 
                 <AnimatePresence>
-                  {isOpen && (
-                    <motion.span
-                      variants={textVariants}
-                      initial="closed"
-                      animate="open"
-                      exit="closed"
-                      className="flex-1"
+                  {isOpen && isDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="mt-1.5 ml-3 space-y-1 border-l-4 border-[var(--neo-black)] pl-3"
                     >
-                      {item.label}
-                    </motion.span>
+                      {item.subItems.map((subItem) => {
+                        const SubIcon = subItem.icon;
+                        const isSubActive = isActiveRoute(subItem.link);
+
+                        return (
+                          <Link
+                            key={subItem.id}
+                            to={subItem.link}
+                            onClick={() => setIsMobileOpen(false)}
+                            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[12px] text-sm font-semibold transition-all ${
+                              isSubActive
+                                ? "bg-secondary border-3 border-[var(--neo-black)] shadow-[2px_2px_0_0_var(--neo-black)] text-foreground"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            }`}
+                          >
+                            {SubIcon ? (
+                              <SubIcon size={16} className="shrink-0" />
+                            ) : (
+                              <span className="w-2 h-2 rounded-full bg-current shrink-0" />
+                            )}
+                            <span>{subItem.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </motion.div>
                   )}
                 </AnimatePresence>
-
-                {isOpen && (
-                  <motion.svg
-                    className={`ml-auto h-4 w-4 ${
-                      isDark ? "text-gray-300" : "text-gray-600"
-                    }`}
-                    animate={{ rotate: openDropdown === item.id ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </motion.svg>
-                )}
               </div>
-            </motion.div>
+            );
+          })}
+        </nav>
 
-            {/* Dropdown Menu */}
-            <AnimatePresence>
-              {isOpen && openDropdown === item.id && (
-                <motion.div
-                  variants={dropdownVariants}
-                  initial="closed"
-                  animate="open"
-                  exit="closed"
-                  className="ml-6 mt-1 space-y-1"
-                >
-                  {item.subItems.map((subItem) => (
-                    <Link
-                      key={subItem.id}
-                      to={subItem.link}
-                      className={`flex items-center p-2 rounded-lg text-sm transition-all duration-200 ${
-                        location.pathname === subItem.link
-                          ? isDark
-                            ? "text-blue-300 bg-blue-600/20"
-                            : "text-blue-600 bg-blue-100/50"
-                          : isDark
-                          ? "text-gray-400 hover:text-gray-200 hover:bg-gray-800/40"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/40"
-                      }`}
-                    >
-                      <span className="w-4 h-4 mr-2 flex items-center justify-center">
-                        •
-                      </span>
-                      <span>{subItem.label}</span>
-                    </Link>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ))}
-      </nav>
-
-      {/* Bottom Section */}
-      <div className="relative z-10 p-3 border-t border-border/60">
-        <motion.button
-          onClick={() => logout()}
-          className={`w-full flex items-center p-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-            isDark
-              ? "text-gray-400 hover:text-red-400 hover:bg-red-500/10"
-              : "text-gray-500 hover:text-red-500 hover:bg-red-50"
-          }`}
-          whileHover={{ scale: 1.02, x: 4 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <motion.span
-            className="text-lg mr-2 flex-shrink-0"
-            whileHover={{ rotate: 15 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        <div className="px-3 py-4 border-t-4 border-[var(--neo-black)]">
+          <button
+            onClick={() => {
+              logout();
+              setIsMobileOpen(false);
+            }}
+            className={`w-full flex items-center ${
+              isOpen ? "gap-3" : "justify-center"
+            } px-3 py-3 rounded-[14px] text-sm font-bold border-4 border-transparent text-muted-foreground hover:border-destructive hover:bg-destructive/15 hover:text-destructive hover:shadow-[3px_3px_0_0_var(--neo-black)] transition-all`}
+            title={!isOpen ? "Logout" : ""}
           >
-            🚪
-          </motion.span>
-          <AnimatePresence>
-            {isOpen && (
-              <motion.div
-                variants={textVariants}
-                initial="closed"
-                animate="open"
-                exit="closed"
-              >
-                Logout
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
-      </div>
-    </motion.div>
+            <LogOut size={20} className="shrink-0" />
+            {isOpen && <span>Logout</span>}
+          </button>
+        </div>
+      </motion.aside>
+    </>
   );
 };
 

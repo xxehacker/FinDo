@@ -1,8 +1,9 @@
 // Transactions.jsx
 import { API_ENDPOINTS } from "@/utils/apiPath";
 import AXIOS_INSTANCE from "@/utils/axiosInstance";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import TransactionModal from "./TransactionModa";
+import { getTypeForCategory, formatCategoryOptionLabel } from "@/lib/categoryUtils";
 import { toast } from "react-toastify";
 import {
   ArrowDownCircle,
@@ -12,12 +13,27 @@ import {
   Wallet,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-const Transactions = () => {
+const Transactions = ({
+  initialFilterType = "all",
+  lockTypeFilter = false,
+  pageTitle = "Transaction Management",
+  pageSubtitle = "Track your income and expenses effortlessly",
+}) => {
   const [transactions, setTransactions] = useState([]);
   const [dayWiseSummaries, setDayWiseSummaries] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all");
+  const [filterType, setFilterType] = useState(initialFilterType);
   const [filterStatus, setFilterStatus] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -27,6 +43,9 @@ const Transactions = () => {
   const [bankAccounts, setBankAccounts] = useState([]);
   const [showDayWiseForm, setShowDayWiseForm] = useState(false);
   const [expandedDays, setExpandedDays] = useState(new Set());
+  const [showSalaryImport, setShowSalaryImport] = useState(false);
+  const [salarySchedule, setSalarySchedule] = useState([]);
+  const [importingSalary, setImportingSalary] = useState(false);
 
   const [formData, setFormData] = useState({
     type: "expense",
@@ -39,6 +58,8 @@ const Transactions = () => {
     transactionStatus: "pending",
     notes: "",
     timeOFDay: "morning",
+    attachment: "",
+    attachmentPreview: "",
   });
 
   const [dayWiseData, setDayWiseData] = useState({
@@ -62,6 +83,8 @@ const Transactions = () => {
       transactionStatus: "pending",
       notes: "",
       timeOFDay: "morning",
+      attachment: "",
+      attachmentPreview: "",
     });
     setErrors({});
   };
@@ -265,7 +288,7 @@ const Transactions = () => {
     try {
       setLoading(true);
       const transactions = dayWiseData.items.map((item) => ({
-        type: dayWiseData.type,
+        type: getTypeForCategory(categories, item.category) || "expense",
         amount: parseFloat(item.amount),
         category: item.category,
         bankAccount: dayWiseData.bankAccount || null,
@@ -346,7 +369,12 @@ const Transactions = () => {
 
   const updateDayWiseItem = (index, field, value) => {
     const newItems = [...dayWiseData.items];
-    newItems[index] = { ...newItems[index], [field]: value };
+    const updated = { ...newItems[index], [field]: value };
+    if (field === "category") {
+      const type = getTypeForCategory(categories, value);
+      if (type) updated._typeHint = type;
+    }
+    newItems[index] = updated;
     setDayWiseData({ ...dayWiseData, items: newItems });
   };
 
@@ -408,25 +436,83 @@ const Transactions = () => {
     }
   };
 
-  // Filter and search transactions
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((transaction) => {
+  const matchesTransactionFilters = useCallback(
+    (transaction) => {
+      const term = searchTerm.trim().toLowerCase();
+      let categoryName = transaction.category?.name || "";
+      if (!categoryName) {
+        const id =
+          typeof transaction.category === "string"
+            ? transaction.category
+            : transaction.category?._id;
+        categoryName = categories.find((c) => c._id === id)?.name || "";
+      }
+      categoryName = categoryName.toLowerCase();
+
       const matchesSearch =
-        transaction.description
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        transaction.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        transaction.category?.name
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase());
+        !term ||
+        transaction.description?.toLowerCase().includes(term) ||
+        transaction.notes?.toLowerCase().includes(term) ||
+        categoryName.includes(term);
+
       const matchesType =
         filterType === "all" || transaction.type === filterType;
       const matchesStatus =
         filterStatus === "all" ||
         transaction.transactionStatus === filterStatus;
+
       return matchesSearch && matchesType && matchesStatus;
+    },
+    [searchTerm, filterType, filterStatus, categories]
+  );
+
+  const filteredTransactions = useMemo(
+    () => transactions.filter(matchesTransactionFilters),
+    [transactions, matchesTransactionFilters]
+  );
+
+  const filteredDayWiseSummaries = useMemo(() => {
+    return (dayWiseSummaries || [])
+      .map((summary) => {
+        const matching = (summary.transactions || []).filter(
+          matchesTransactionFilters
+        );
+        if (matching.length === 0) return null;
+
+        const totalIncome = matching
+          .filter((t) => t.type === "income")
+          .reduce((sum, t) => sum + (t.amount || 0), 0);
+        const totalExpense = matching
+          .filter((t) => t.type === "expense")
+          .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        return {
+          ...summary,
+          transactions: matching,
+          totalIncome,
+          totalExpense,
+        };
+      })
+      .filter(Boolean);
+  }, [dayWiseSummaries, matchesTransactionFilters]);
+
+  const dayWiseTransactionIds = useMemo(() => {
+    const ids = new Set();
+    (dayWiseSummaries || []).forEach((summary) => {
+      (summary.transactions || []).forEach((tx) => {
+        ids.add(String(tx._id));
+      });
     });
-  }, [transactions, searchTerm, filterType, filterStatus]);
+    return ids;
+  }, [dayWiseSummaries]);
+
+  const standaloneFilteredTransactions = useMemo(
+    () =>
+      filteredTransactions.filter(
+        (t) => !dayWiseTransactionIds.has(String(t._id))
+      ),
+    [filteredTransactions, dayWiseTransactionIds]
+  );
 
   // Handle form submission
   const handleSubmit = (e) => {
@@ -444,6 +530,7 @@ const Transactions = () => {
       transactionMethod: formData.transactionMethod,
       notes: formData.notes.trim(),
       timeOFDay: formData.timeOFDay,
+      attachment: formData.attachment || "",
     };
 
     if (editingTransaction) {
@@ -461,7 +548,7 @@ const Transactions = () => {
   const handleEdit = (transaction) => {
     setEditingTransaction(transaction);
     setFormData({
-      type: transaction.type,
+      type: transaction.category?.type || transaction.type,
       amount: transaction.amount.toString(),
       category: transaction.category?._id || "",
       bankAccount: transaction.bankAccount?._id || "",
@@ -471,8 +558,36 @@ const Transactions = () => {
       transactionStatus: transaction.transactionStatus || "pending",
       notes: transaction.notes || "",
       timeOFDay: transaction.timeOFDay || "morning",
+      attachment: transaction.attachment || "",
+      attachmentPreview: "",
     });
     setShowForm(true);
+  };
+
+  const handleBulkTransactionImport = async (rows) => {
+    let success = 0;
+    for (const row of rows) {
+      if (!row.amount || !row.description || !row.category) continue;
+      try {
+        await AXIOS_INSTANCE.post(API_ENDPOINTS.TRANSACTION.CREATE, {
+          amount: Number(row.amount),
+          category: row.category,
+          bankAccount: row.bankAccount || null,
+          description: String(row.description).trim(),
+          date: row.date || new Date().toISOString().split("T")[0],
+          transactionMethod: row.transactionMethod || "googlepay",
+          transactionStatus: row.transactionStatus || "pending",
+          notes: row.notes || "",
+          timeOFDay: row.timeOFDay || "morning",
+          attachment: row.attachment || "",
+        });
+        success += 1;
+      } catch {
+        /* continue other rows */
+      }
+    }
+    toast.success(`Imported ${success} of ${rows.length} transactions`);
+    handleGetTransactions();
   };
 
   // Handle delete button click
@@ -541,6 +656,56 @@ const Transactions = () => {
     }
   };
 
+  const openSalaryImportDialog = async () => {
+    try {
+      const response = await AXIOS_INSTANCE.get(
+        API_ENDPOINTS.TRANSACTION.SALARY_SCHEDULE_PREVIEW
+      );
+      const schedule = response.data?.data?.schedule || [];
+      setSalarySchedule(schedule);
+      setShowSalaryImport(true);
+    } catch (err) {
+      console.error("Error loading salary schedule:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to load salary schedule"
+      );
+    }
+  };
+
+  const handleImportSalaryHistory = async () => {
+    setImportingSalary(true);
+    try {
+      const response = await AXIOS_INSTANCE.post(
+        API_ENDPOINTS.TRANSACTION.IMPORT_SALARY_HISTORY
+      );
+      const result = response.data?.data || {};
+      const { created = 0, skipped = 0 } = result;
+      toast.success(
+        `Salary import done: ${created} created, ${skipped} skipped (already existed).`
+      );
+      setShowSalaryImport(false);
+      await handleGetTransactions();
+      await handleGetDayWiseSummaries();
+      await fetchCategories();
+    } catch (err) {
+      console.error("Error importing salary history:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to import salary history"
+      );
+    } finally {
+      setImportingSalary(false);
+    }
+  };
+
+  const salaryImportTotal = useMemo(
+    () => salarySchedule.reduce((sum, row) => sum + (row.amount || 0), 0),
+    [salarySchedule]
+  );
+
+  useEffect(() => {
+    setFilterType(initialFilterType);
+  }, [initialFilterType]);
+
   // Fetch data on mount
   useEffect(() => {
     handleGetTransactions();
@@ -550,34 +715,87 @@ const Transactions = () => {
   }, []);
 
   return (
-    <div className="w-full mx-auto space-y-8 p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="w-full mx-auto space-y-8">
+      <div className="neo-card p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-            Transaction Management
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
+            {pageTitle}
           </h1>
-          <p className="text-lg text-muted-foreground mt-2">
-            Track your income and expenses effortlessly
+          <p className="text-muted-foreground font-medium mt-2">
+            {pageSubtitle}
           </p>
         </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground px-6 py-3 rounded-xl font-semibold hover:from-primary/90 hover:to-primary transition-all shadow-md disabled:opacity-50"
-            disabled={loading}
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={() => setShowForm(true)} disabled={loading}>
+            + Add Transaction
+          </Button>
+          <Button variant="secondary" onClick={() => setShowDayWiseForm(true)} disabled={loading}>
+            + Day-Wise
+          </Button>
+          <Button
+            variant="outline"
+            onClick={openSalaryImportDialog}
+            disabled={loading || importingSalary}
           >
-            ➕ Add Transaction
-          </button>
-          <button
-            onClick={() => setShowDayWiseForm(true)}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all shadow-md disabled:opacity-50"
-            disabled={loading}
-          >
-            ➕ Add Day-Wise Transaction
-          </button>
+            Import salary history (May 2025–May 2026)
+          </Button>
         </div>
       </div>
+
+      <Dialog open={showSalaryImport} onOpenChange={setShowSalaryImport}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Import salary history</DialogTitle>
+            <DialogDescription>
+              Creates 13 monthly income transactions under a Salary category.
+              Months you already logged are skipped.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-x-auto neo-border rounded-lg">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b-4 border-[var(--neo-black)] bg-secondary">
+                  <th className="text-left p-2 font-bold">Month</th>
+                  <th className="text-right p-2 font-bold">Amount (INR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {salarySchedule.map((row) => (
+                  <tr
+                    key={`${row.month}-${row.employmentMonth}`}
+                    className="border-b border-[var(--neo-black)]/20"
+                  >
+                    <td className="p-2">{row.month}</td>
+                    <td className="p-2 text-right font-medium">
+                      {Number(row.amount).toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-muted/50 font-bold">
+                  <td className="p-2">Total (13 months)</td>
+                  <td className="p-2 text-right">
+                    {salaryImportTotal.toLocaleString("en-IN")}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setShowSalaryImport(false)}
+              disabled={importingSalary}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleImportSalaryHistory} disabled={importingSalary}>
+              {importingSalary ? "Importing…" : "Confirm import"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Transaction Modal */}
       <TransactionModal
@@ -595,31 +813,21 @@ const Transactions = () => {
         categories={categories}
         bankAccounts={bankAccounts}
         loading={loading}
+        onBulkImport={handleBulkTransactionImport}
       />
 
       {/* Day-wise Transaction Form Modal */}
       {showDayWiseForm && (
-        <div className="fixed inset-0 h-full bg-transparent backdrop-blur bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-card border border-border rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 h-full bg-[var(--neo-black)]/50 flex items-center justify-center p-4 z-50">
+          <div className="neo-card p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-card-foreground mb-4">
               Add Day-wise Transactions
             </h3>
             <form onSubmit={handleDayWiseSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-accent/30 rounded-lg">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Type</label>
-                  <select
-                    value={dayWiseData.type}
-                    onChange={(e) =>
-                      setDayWiseData({ ...dayWiseData, type: e.target.value })
-                    }
-                    className="w-full px-3 py-2 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring"
-                    required
-                  >
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
-                  </select>
-                </div>
+              <p className="text-sm font-medium text-muted-foreground mb-2">
+                Each line uses its category&apos;s income/expense type automatically.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-accent/30 rounded-lg">
                 <div>
                   <label className="block text-sm font-medium mb-1">Date</label>
                   <input
@@ -737,7 +945,7 @@ const Transactions = () => {
                             <option value="">Select category</option>
                             {categories.map((category) => (
                               <option key={category._id} value={category._id}>
-                                {category.name}
+                                {formatCategoryOptionLabel(category)}
                               </option>
                             ))}
                           </select>
@@ -959,16 +1167,18 @@ const Transactions = () => {
             />
           </div>
           <div className="flex gap-4">
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="w-full sm:w-40 px-4 py-3 bg-input-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50"
-              disabled={loading}
-            >
-              <option value="all">All Types</option>
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
-            </select>
+            {!lockTypeFilter && (
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full sm:w-40 px-4 py-3 bg-input-background border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:opacity-50"
+                disabled={loading}
+              >
+                <option value="all">All Types</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+            )}
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -1034,7 +1244,7 @@ const Transactions = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {(dayWiseSummaries || []).map((summary) => {
+                {(filteredDayWiseSummaries || []).map((summary) => {
                   const totalAmount =
                     summary.totalIncome - summary.totalExpense;
                   const isExpanded = expandedDays.has(summary.date);
@@ -1259,13 +1469,7 @@ const Transactions = () => {
                     </React.Fragment>
                   );
                 })}
-                {filteredTransactions
-                  .filter(
-                    (t) =>
-                      !dayWiseSummaries.some((s) =>
-                        s.transactions.some((tx) => tx._id === t._id)
-                      )
-                  )
+                {standaloneFilteredTransactions
                   .sort(
                     (a, b) =>
                       new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -1391,7 +1595,7 @@ const Transactions = () => {
               </tbody>
             </table>
             {filteredTransactions.length === 0 &&
-              dayWiseSummaries.length === 0 && (
+              filteredDayWiseSummaries.length === 0 && (
                 <div className="text-center py-16">
                   <span className="text-5xl">📊</span>
                   <h3 className="mt-6 text-xl font-semibold text-card-foreground">

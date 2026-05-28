@@ -1,5 +1,12 @@
 import { TrendingUp } from "lucide-react";
-import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
+import {
+  Line,
+  LineChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
 import {
   Card,
   CardContent,
@@ -22,9 +29,16 @@ const chartConfig = {
   },
 };
 
-export function DailyTransactionChart({ title, data }) {
+export function DailyTransactionChart({ title, data, formatCurrency }) {
+  // Default currency formatter if not provided
+  const defaultFormatCurrency = (amount) =>
+    `₹${amount.toLocaleString("en-IN")}`;
+  const currencyFormatter = formatCurrency || defaultFormatCurrency;
+
   return (
-    <Card style={{ width: "100%", minHeight: "200px", boxSizing: "border-box" }}>
+    <Card
+      style={{ width: "100%", minHeight: "200px", boxSizing: "border-box" }}
+    >
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
@@ -52,7 +66,7 @@ export function DailyTransactionChart({ title, data }) {
               tickLine={false}
               axisLine={false}
               tickMargin={10}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value) => currencyFormatter(value)}
             />
             <Tooltip
               cursor={{ stroke: "#4CAF50", strokeWidth: 1 }}
