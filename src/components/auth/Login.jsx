@@ -2,7 +2,11 @@ import { AuthContext } from "@/contexts/AuthContext";
 import { API_ENDPOINTS } from "@/utils/apiPath";
 import AXIOS_INSTANCE from "@/utils/axiosInstance";
 import React, { useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert } from "@/components/ui/alert";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -11,9 +15,8 @@ const Login = () => {
   const navigate = useNavigate();
   const { user, setUser } = useContext(AuthContext);
 
-  const validateEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  const validateEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -52,29 +55,26 @@ const Login = () => {
         }
         setUser(response.data.data.user);
         localStorage.setItem("token", response.data?.data?.token);
-        localStorage.setItem("user", JSON.stringify(response.data?.data?.user));
+        localStorage.setItem(
+          "user",
+          JSON.stringify(response.data?.data?.user)
+        );
         setIsLoading(false);
         setError("");
       } else {
         setError(response.data?.message || "Failed to login");
         setIsLoading(false);
       }
-    } catch (error) {
-      console.error(
-        "Login error:",
-        error?.response?.data?.message || error.message
-      );
+    } catch (err) {
       setError(
-        error?.response?.data?.message || "Failed to login. Please try again."
+        err?.response?.data?.message || "Failed to login. Please try again."
       );
       setIsLoading(false);
     }
   };
 
-  // Navigate after user is set
   useEffect(() => {
     if (user && user.role) {
-      console.log("Navigating based on role:", user.role);
       switch (user.role) {
         case "admin":
           navigate("/admin/dashboard");
@@ -91,34 +91,17 @@ const Login = () => {
   return (
     <>
       {error && (
-        <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-          <div className="flex items-center text-destructive">
-            <svg
-              className="h-5 w-5 mr-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-            <span className="text-sm font-medium">{error}</span>
-          </div>
-        </div>
+        <Alert variant="destructive" className="mb-6">
+          {error}
+        </Alert>
       )}
       <form onSubmit={handleLogin} className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-card-foreground mb-2">
-            Email
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
             type="email"
-            className="w-full px-4 py-3 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
-            placeholder="Enter your email"
+            placeholder="you@example.com"
             value={loginForm.email}
             onChange={(e) =>
               setLoginForm({ ...loginForm, email: e.target.value })
@@ -127,14 +110,12 @@ const Login = () => {
             disabled={isLoading}
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-card-foreground mb-2">
-            Password
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
             type="password"
-            className="w-full px-4 py-3 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
-            placeholder="Enter your password"
+            placeholder="••••••••"
             value={loginForm.password}
             onChange={(e) =>
               setLoginForm({ ...loginForm, password: e.target.value })
@@ -143,13 +124,18 @@ const Login = () => {
             disabled={isLoading}
           />
         </div>
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-primary text-primary-foreground py-3 px-4 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:cursor-pointer"
-        >
+        <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
           {isLoading ? "Signing in..." : "Sign In"}
-        </button>
+        </Button>
+        <p className="text-center text-sm font-semibold text-muted-foreground">
+          No account?{" "}
+          <Link
+            to="/signup"
+            className="text-foreground font-bold underline underline-offset-4 hover:text-primary"
+          >
+            Create one
+          </Link>
+        </p>
       </form>
     </>
   );

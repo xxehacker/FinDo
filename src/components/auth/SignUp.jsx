@@ -1,6 +1,11 @@
 import { API_ENDPOINTS } from "@/utils/apiPath";
 import AXIOS_INSTANCE from "@/utils/axiosInstance";
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert } from "@/components/ui/alert";
 
 const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -28,23 +33,17 @@ const Signup = () => {
       return;
     }
     try {
-      // console.log("signupForm:", signupForm);
-      const { username, email, password,phone } = signupForm;
-
+      const { username, email, password, phone } = signupForm;
       const response = await AXIOS_INSTANCE.post(API_ENDPOINTS.AUTH.SIGNUP, {
         username,
         email,
         password,
-        phone
+        phone,
       });
-
       if (response.status === 201) {
         window.location.href = "/login";
       }
-
-      setIsLoading(false);
     } catch (err) {
-      console.error("Signup error:", err);
       setError(`${err?.response?.data?.message}`);
     } finally {
       setIsLoading(false);
@@ -54,34 +53,17 @@ const Signup = () => {
   return (
     <>
       {error && (
-        <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-          <div className="flex items-center text-destructive">
-            <svg
-              className="h-5 w-5 mr-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-            <span className="text-sm font-medium">{error}</span>
-          </div>
-        </div>
+        <Alert variant="destructive" className="mb-6">
+          {error}
+        </Alert>
       )}
-      <form onSubmit={handleSignup} className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-card-foreground mb-2">
-            Username
-          </label>
-          <input
+      <form onSubmit={handleSignup} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="username">Username</Label>
+          <Input
+            id="username"
             type="text"
-            className="w-full px-4 py-3 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
-            placeholder="Enter your full name"
+            placeholder="Your name"
             value={signupForm.username}
             onChange={(e) =>
               setSignupForm({ ...signupForm, username: e.target.value })
@@ -89,14 +71,12 @@ const Signup = () => {
             required
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-card-foreground mb-2">
-            Email
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
             type="email"
-            className="w-full px-4 py-3 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
-            placeholder="Enter your email"
+            placeholder="you@example.com"
             value={signupForm.email}
             onChange={(e) =>
               setSignupForm({ ...signupForm, email: e.target.value })
@@ -104,14 +84,12 @@ const Signup = () => {
             required
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-card-foreground mb-2">
-            Phone
-          </label>
-          <input
-            type="phone"
-            className="w-full px-4 py-3 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
-            placeholder="Enter your phone"
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone</Label>
+          <Input
+            id="phone"
+            type="tel"
+            placeholder="+91 ..."
             value={signupForm.phone}
             onChange={(e) =>
               setSignupForm({ ...signupForm, phone: e.target.value })
@@ -119,14 +97,12 @@ const Signup = () => {
             required
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-card-foreground mb-2">
-            Password
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
             type="password"
-            className="w-full px-4 py-3 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
-            placeholder="Create a password"
+            placeholder="Min. 6 characters"
             value={signupForm.password}
             onChange={(e) =>
               setSignupForm({ ...signupForm, password: e.target.value })
@@ -134,14 +110,12 @@ const Signup = () => {
             required
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-card-foreground mb-2">
-            Confirm Password
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Input
+            id="confirmPassword"
             type="password"
-            className="w-full px-4 py-3 bg-input-background border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
-            placeholder="Confirm your password"
+            placeholder="Repeat password"
             value={signupForm.confirmPassword}
             onChange={(e) =>
               setSignupForm({
@@ -152,14 +126,18 @@ const Signup = () => {
             required
           />
         </div>
-        <button
-          type="submit"
-          disabled={isLoading}
-          onClick={() => console.log("Create Account button clicked")}
-          className="w-full bg-primary text-primary-foreground py-3 px-4 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors hover:cursor-pointer"
-        >
+        <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
           {isLoading ? "Creating account..." : "Create Account"}
-        </button>
+        </Button>
+        <p className="text-center text-sm font-semibold text-muted-foreground">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-foreground font-bold underline underline-offset-4 hover:text-primary"
+          >
+            Sign in
+          </Link>
+        </p>
       </form>
     </>
   );
